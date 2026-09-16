@@ -1,0 +1,1 @@
+DEVE-merged/Permanent[[:space:]]Project/*.zip filter=lfs diff=lfs merge=lfs -text
