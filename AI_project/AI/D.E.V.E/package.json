@@ -1,0 +1,66 @@
+{
+  "name": "deve-ai",
+  "version": "1.0.0",
+  "description": "D.E.V.E — Autonomous AI Assistant. Runs 100% locally on your device.",
+  "main": "main.js",
+  "author": "D.E.V.E Systems",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
+  },
+  "dependencies": {
+    "auto-launch": "^5.0.5"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "build": {
+    "appId": "com.deve.ai",
+    "productName": "D.E.V.E",
+    "copyright": "D.E.V.E Systems",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "assets/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "D.E.V.E AI",
+      "runAfterFinish": true
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.svg",
+      "category": "public.app-category.productivity"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.svg",
+      "category": "Utility"
+    }
+  }
+}

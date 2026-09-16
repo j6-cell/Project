@@ -1,0 +1,312 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600&display=swap');
+  .dv-root{width:100%;font-family:'Rajdhani',sans-serif;background:#020b14;border-radius:10px;overflow:hidden;border:1px solid rgba(0,200,255,0.15);box-shadow:0 0 60px rgba(0,200,255,0.06)}
+  .dv-scanlines{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 4px);pointer-events:none;z-index:50;border-radius:10px}
+  .dv-inner{position:relative;display:flex;flex-direction:column;height:580px}
+
+  /* titlebar */
+  .dv-tb{height:34px;background:#010810;border-bottom:1px solid rgba(0,200,255,0.09);display:flex;align-items:center;padding:0 10px;gap:8px;flex-shrink:0;-webkit-app-region:drag}
+  .dv-tb-logo{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:900;letter-spacing:.18em;color:#fff}
+  .dv-tb-logo em{color:#00c8ff;font-style:normal}
+  .dv-tb-stats{display:flex;gap:12px;flex:1;padding-left:8px}
+  .dv-tb-stat{font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(150,210,240,.4);letter-spacing:.06em}
+  .dv-tb-stat b{color:#00c8ff}
+  .dv-wbtns{display:flex;gap:0;margin-left:auto}
+  .dv-wb{width:38px;height:34px;border:none;background:transparent;color:rgba(150,210,240,.35);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:'Share Tech Mono',monospace}
+  .dv-wb:hover{background:rgba(0,200,255,.07);color:#00c8ff}
+  .dv-wb.cls:hover{background:rgba(255,64,96,.15);color:#ff4060}
+
+  /* main grid */
+  .dv-main{flex:1;display:grid;grid-template-columns:44px 210px 1fr 220px;overflow:hidden}
+
+  /* rail */
+  .dv-rail{background:rgba(3,9,17,.8);border-right:1px solid rgba(0,200,255,.07);display:flex;flex-direction:column;align-items:center;padding:6px 0;gap:2px}
+  .dv-ri{width:34px;height:34px;border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:rgba(150,210,240,.35);border:1px solid transparent;transition:all .15s;font-family:'Share Tech Mono',monospace}
+  .dv-ri:hover,.dv-ri.on{background:rgba(0,200,255,.07);border-color:rgba(0,200,255,.12);color:#00c8ff}
+  .dv-ri i{font-size:14px}
+  .dv-ri span{font-size:5px;letter-spacing:.04em}
+  .dv-rsep{width:24px;height:1px;background:rgba(0,200,255,.07);margin:2px 0}
+
+  /* left panel */
+  .dv-lp{background:rgba(4,11,20,.7);border-right:1px solid rgba(0,200,255,.07);display:flex;flex-direction:column;overflow:hidden}
+  .dv-lsec{border-bottom:1px solid rgba(0,200,255,.07);padding:9px 11px;flex-shrink:0}
+  .dv-lsec.grow{flex:1;overflow:hidden}
+  .dv-slbl{font-family:'Share Tech Mono',monospace;font-size:7.5px;color:rgba(150,210,240,.35);letter-spacing:.12em;margin-bottom:6px;display:flex;align-items:center;gap:3px}
+  .dv-slbl::before{content:'//';color:#00c8ff;opacity:.4}
+
+  /* orb */
+  .dv-orbwrap{display:flex;flex-direction:column;align-items:center;gap:7px;padding:6px 0 8px}
+  .dv-orb{width:60px;height:60px;border-radius:50%;position:relative}
+  .dv-or{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(0,200,255,.15);animation:dvospin 4s linear infinite}
+  .dv-or:nth-child(2){inset:-6px;border-color:rgba(0,200,255,.07);animation-duration:7s;animation-direction:reverse}
+  .dv-or:nth-child(3){inset:-13px;border-color:rgba(0,200,255,.04);animation-duration:12s}
+  @keyframes dvospin{to{transform:rotate(360deg)}}
+  .dv-oc{position:absolute;inset:6px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(0,200,255,.18),rgba(0,40,80,.97));border:1px solid rgba(0,200,255,.28);display:flex;align-items:center;justify-content:center;animation:dvocp 3s ease-in-out infinite}
+  @keyframes dvocp{0%,100%{box-shadow:0 0 10px rgba(0,200,255,.12)}50%{box-shadow:0 0 25px rgba(0,200,255,.32)}}
+  .dv-ol{font-family:'Orbitron',sans-serif;font-size:.95rem;font-weight:900;color:#fff;text-shadow:0 0 8px #00c8ff}
+  .dv-ostat{font-family:'Share Tech Mono',monospace;font-size:7.5px;color:rgba(150,210,240,.4);text-align:center;letter-spacing:.1em}
+  .dv-owave{display:flex;align-items:center;justify-content:center;gap:2px;height:16px}
+  .dv-ow{width:2px;border-radius:99px;background:#00c8ff;animation:dvowv 1.4s ease-in-out infinite}
+  @keyframes dvowv{0%,100%{height:2px;opacity:.15}50%{height:13px;opacity:.7}}
+
+  /* data rows */
+  .dv-drows{display:flex;flex-direction:column;gap:3px}
+  .dv-dr{display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:8.5px;border-bottom:1px solid rgba(0,200,255,.04);padding-bottom:3px}
+  .dv-dr:last-child{border:none}
+  .dv-dk{color:rgba(150,210,240,.38)}.dv-dv{color:#00c8ff}
+  .dv-dv.g{color:#00ffaa}.dv-dv.y{color:#ffd84d}.dv-dv.r{color:#ff4060}
+
+  /* progs */
+  .dv-progs{display:flex;flex-direction:column;gap:5px}
+  .dv-pgr{display:flex;flex-direction:column;gap:2px}
+  .dv-pgh{display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:7.5px}
+  .dv-pgk{color:rgba(150,210,240,.35)}.dv-pgv{color:#00c8ff}
+  .dv-pgt{height:2px;background:rgba(0,200,255,.06)}
+  .dv-pgf{height:100%;position:relative}
+  .dv-pgf::after{content:'';position:absolute;right:0;top:0;height:100%;width:3px;background:#fff;opacity:.4;filter:blur(1px)}
+
+  /* center */
+  .dv-center{display:flex;flex-direction:column;overflow:hidden;background:rgba(2,7,14,.6)}
+  .dv-feed{flex:1;overflow:hidden;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+  .dv-sysmsg{font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(150,210,240,.35);text-align:center;padding:4px;letter-spacing:.06em;border-top:1px solid rgba(0,200,255,.04);border-bottom:1px solid rgba(0,200,255,.04)}
+  .dv-sysmsg b{color:#00c8ff}
+  .dv-msg{display:flex;gap:6px}
+  .dv-msg.u{flex-direction:row-reverse}
+  .dv-av{width:20px;height:20px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:6px;font-weight:700;border:1px solid;margin-top:2px}
+  .dv-av.ai{background:rgba(0,200,255,.07);color:#00c8ff;border-color:rgba(0,200,255,.2)}
+  .dv-av.u{background:rgba(155,109,255,.07);color:#9b6dff;border-color:rgba(155,109,255,.2)}
+  .dv-mbody{max-width:85%;display:flex;flex-direction:column;gap:2px}
+  .dv-msg.u .dv-mbody{align-items:flex-end}
+  .dv-mmeta{font-family:'Share Tech Mono',monospace;font-size:7px;color:rgba(150,210,240,.3)}
+  .dv-bbl{padding:7px 10px;border-radius:2px;font-size:12px;line-height:1.6;font-family:'Rajdhani',sans-serif}
+  .dv-bbl.ai{background:rgba(0,200,255,.04);border:1px solid rgba(0,200,255,.09);border-left:2px solid #00c8ff;color:#c8eeff}
+  .dv-bbl.u{background:rgba(155,109,255,.05);border:1px solid rgba(155,109,255,.14);border-right:2px solid #9b6dff;color:#c8eeff;text-align:right}
+  .dv-cursor{display:inline-block;width:6px;height:11px;background:#00c8ff;animation:dvcur .7s step-end infinite;vertical-align:middle;margin-left:2px}
+  @keyframes dvcur{0%,100%{opacity:1}50%{opacity:0}}
+
+  /* input bar */
+  .dv-ibar{border-top:1px solid rgba(0,200,255,.07);padding:7px 10px;display:flex;gap:5px;align-items:center;background:rgba(2,8,16,.97);flex-shrink:0}
+  .dv-inp{flex:1;background:rgba(0,200,255,.03);border:1px solid rgba(0,200,255,.09);border-radius:2px;padding:6px 10px;color:rgba(150,210,240,.5);font-family:'Share Tech Mono',monospace;font-size:10px;font-style:italic}
+  .dv-ibtn{height:28px;padding:0 10px;background:transparent;border:1px solid rgba(0,200,255,.09);border-radius:2px;color:rgba(150,210,240,.35);font-family:'Share Tech Mono',monospace;font-size:8px;cursor:pointer;letter-spacing:.06em;white-space:nowrap;display:flex;align-items:center;gap:4px}
+  .dv-ibtn i{font-size:12px}
+  .dv-ibtn.primary{border-color:rgba(0,200,255,.28);color:#00c8ff}
+
+  /* right panel */
+  .dv-rp{background:rgba(4,11,20,.7);border-left:1px solid rgba(0,200,255,.07);display:flex;flex-direction:column;overflow:hidden}
+  .dv-rptabs{display:flex;border-bottom:1px solid rgba(0,200,255,.07);flex-shrink:0}
+  .dv-rpt{flex:1;padding:7px 0;text-align:center;font-family:'Share Tech Mono',monospace;font-size:7px;letter-spacing:.08em;color:rgba(150,210,240,.3);border-bottom:1px solid transparent}
+  .dv-rpt.on{color:#00c8ff;border-bottom-color:#00c8ff}
+  .dv-rpbody{flex:1;overflow:hidden;padding:9px 10px}
+
+  /* model card */
+  .dv-mc{border:1px solid rgba(0,200,255,.09);border-radius:2px;padding:8px 9px;margin-bottom:5px;background:rgba(0,200,255,.02)}
+  .dv-mc.on{border-color:rgba(0,200,255,.28);background:rgba(0,200,255,.06)}
+  .dv-mc-name{font-family:'Share Tech Mono',monospace;font-size:9px;color:#c8eeff;margin-bottom:2px}
+  .dv-mc-desc{font-family:'Share Tech Mono',monospace;font-size:7.5px;color:rgba(150,210,240,.35)}
+  .dv-tag{display:inline-block;font-family:'Share Tech Mono',monospace;font-size:6.5px;border:1px solid rgba(0,200,255,.18);border-radius:1px;padding:1px 4px;color:rgba(0,200,255,.6);margin-top:3px;margin-right:2px}
+  .dv-tag.g{border-color:rgba(0,255,170,.25);color:rgba(0,255,170,.7)}
+
+  /* statusbar */
+  .dv-sb{height:20px;border-top:1px solid rgba(0,200,255,.07);background:rgba(1,8,16,.98);display:flex;align-items:center;padding:0 10px;gap:14px;font-family:'Share Tech Mono',monospace;font-size:7.5px;color:rgba(150,210,240,.3);flex-shrink:0}
+  .dv-sb b{color:#00c8ff}
+  .dv-sb .dot{width:5px;height:5px;border-radius:50%;background:#00ffaa;box-shadow:0 0 4px #00ffaa;animation:dvpd 2s ease-in-out infinite}
+  @keyframes dvpd{0%,100%{opacity:1}50%{opacity:.25}}
+
+  /* tray tooltip */
+  .dv-tray{position:absolute;bottom:28px;right:12px;background:rgba(6,15,26,.98);border:1px solid rgba(0,200,255,.2);border-radius:3px;padding:6px 10px;font-family:'Share Tech Mono',monospace;font-size:8px;color:#00c8ff;z-index:100;white-space:nowrap;box-shadow:0 0 20px rgba(0,200,255,.08)}
+  .dv-tray::after{content:'';position:absolute;bottom:-5px;right:16px;width:8px;height:5px;background:rgba(6,15,26,.98);clip-path:polygon(0 0,100% 0,50% 100%);border-left:1px solid rgba(0,200,255,.2);border-right:1px solid rgba(0,200,255,.2)}
+</style>
+
+<h2 class="sr-only">D.E.V.E Windows desktop app preview showing the JARVIS-style interface with custom titlebar, AI orb, chat feed, and local model panel</h2>
+
+<div class="dv-root">
+  <div class="dv-inner">
+    <div class="dv-scanlines"></div>
+
+    <!-- TITLEBAR -->
+    <div class="dv-tb">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="6" stroke="#00c8ff" stroke-opacity=".35"/><text x="6.5" y="9.5" font-size="7" text-anchor="middle" fill="#00c8ff" font-family="monospace" font-weight="900">D</text></svg>
+      <div class="dv-tb-logo">D.E.V.<em>E</em></div>
+      <div class="dv-tb-stats">
+        <div class="dv-tb-stat">STATUS <b>ONLINE</b></div>
+        <div class="dv-tb-stat">MODEL <b>llama3</b></div>
+        <div class="dv-tb-stat">MSGS <b>3</b></div>
+        <div class="dv-tb-stat">BG TASKS <b>12</b></div>
+        <div class="dv-tb-stat">VOICE <b>READY</b></div>
+      </div>
+      <div class="dv-wbtns">
+        <div class="dv-wb">─</div>
+        <div class="dv-wb">□</div>
+        <div class="dv-wb cls">✕</div>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="dv-main">
+
+      <!-- RAIL -->
+      <div class="dv-rail">
+        <div class="dv-ri on"><i class="ti ti-message-2" aria-hidden="true"></i><span>CHAT</span></div>
+        <div class="dv-ri"><i class="ti ti-code" aria-hidden="true"></i><span>CODE</span></div>
+        <div class="dv-ri"><i class="ti ti-palette" aria-hidden="true"></i><span>DESIGN</span></div>
+        <div class="dv-ri"><i class="ti ti-currency-dollar" aria-hidden="true"></i><span>FIN</span></div>
+        <div class="dv-ri"><i class="ti ti-pencil" aria-hidden="true"></i><span>WRITE</span></div>
+        <div class="dv-ri"><i class="ti ti-search" aria-hidden="true"></i><span>SEARCH</span></div>
+        <div class="dv-rsep"></div>
+        <div class="dv-ri"><i class="ti ti-book" aria-hidden="true"></i><span>LEARN</span></div>
+        <div class="dv-ri"><i class="ti ti-bolt" aria-hidden="true"></i><span>AUTO</span></div>
+      </div>
+
+      <!-- LEFT PANEL -->
+      <div class="dv-lp">
+        <div class="dv-lsec">
+          <div class="dv-slbl">CORE AI</div>
+          <div class="dv-orbwrap">
+            <div class="dv-orb">
+              <div class="dv-or"></div>
+              <div class="dv-or"></div>
+              <div class="dv-or"></div>
+              <div class="dv-oc"><div class="dv-ol">D</div></div>
+            </div>
+            <div class="dv-ostat">ACTIVE — LOCAL AI</div>
+            <div class="dv-owave">
+              <div class="dv-ow" style="animation-delay:.00s"></div>
+              <div class="dv-ow" style="animation-delay:.10s"></div>
+              <div class="dv-ow" style="animation-delay:.20s"></div>
+              <div class="dv-ow" style="animation-delay:.05s"></div>
+              <div class="dv-ow" style="animation-delay:.15s"></div>
+              <div class="dv-ow" style="animation-delay:.25s"></div>
+              <div class="dv-ow" style="animation-delay:.08s"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dv-lsec">
+          <div class="dv-slbl">SYSTEM</div>
+          <div class="dv-drows">
+            <div class="dv-dr"><span class="dv-dk">LOCAL AI</span><span class="dv-dv g">ONLINE</span></div>
+            <div class="dv-dr"><span class="dv-dk">MODEL</span><span class="dv-dv">llama3</span></div>
+            <div class="dv-dr"><span class="dv-dk">BACKGROUND</span><span class="dv-dv g">RUNNING</span></div>
+            <div class="dv-dr"><span class="dv-dk">VOICE</span><span class="dv-dv">READY</span></div>
+            <div class="dv-dr"><span class="dv-dk">MEMORY</span><span class="dv-dv">3 TURNS</span></div>
+            <div class="dv-dr"><span class="dv-dk">INTERNET</span><span class="dv-dv r">NOT NEEDED</span></div>
+          </div>
+        </div>
+
+        <div class="dv-lsec grow">
+          <div class="dv-slbl">MODULES</div>
+          <div class="dv-progs">
+            <div class="dv-pgr"><div class="dv-pgh"><span class="dv-pgk">UP DEV</span><span class="dv-pgv">READY</span></div><div class="dv-pgt"><div class="dv-pgf" style="width:78%;background:linear-gradient(90deg,#00ffaa,#0af)"></div></div></div>
+            <div class="dv-pgr"><div class="dv-pgh"><span class="dv-pgk">UP STUDIO</span><span class="dv-pgv">READY</span></div><div class="dv-pgt"><div class="dv-pgf" style="width:70%;background:linear-gradient(90deg,#0af,#9b6dff)"></div></div></div>
+            <div class="dv-pgr"><div class="dv-pgh"><span class="dv-pgk">UP FLOW</span><span class="dv-pgv">ACTIVE</span></div><div class="dv-pgt"><div class="dv-pgf" style="width:100%;background:linear-gradient(90deg,#ffd84d,#ff8c42)"></div></div></div>
+            <div class="dv-pgr"><div class="dv-pgh"><span class="dv-pgk">UP FINANCE</span><span class="dv-pgv">READY</span></div><div class="dv-pgt"><div class="dv-pgf" style="width:62%;background:linear-gradient(90deg,#00ffaa,#4f8fff)"></div></div></div>
+            <div class="dv-pgr"><div class="dv-pgh"><span class="dv-pgk">UP VOICE</span><span class="dv-pgv">STANDBY</span></div><div class="dv-pgt"><div class="dv-pgf" style="width:28%;background:linear-gradient(90deg,#ff6b6b,#ffd84d)"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CENTER CHAT -->
+      <div class="dv-center">
+        <div class="dv-feed">
+          <div class="dv-sysmsg">// <b>D.E.V.E AUTONOMOUS SYSTEM ONLINE</b> — 100% LOCAL — ZERO INTERNET REQUIRED //</div>
+
+          <div class="dv-msg">
+            <div class="dv-av ai">D</div>
+            <div class="dv-mbody">
+              <div class="dv-mmeta">D.E.V.E // 14:22:01</div>
+              <div class="dv-bbl ai">All systems operational, sir. Running 100% locally on your machine — no internet, no cloud, no data leaving your device. Model: llama3. 425 capabilities ready. How may I assist you?</div>
+            </div>
+          </div>
+
+          <div class="dv-msg u">
+            <div class="dv-av u">U</div>
+            <div class="dv-mbody">
+              <div class="dv-mmeta">YOU // 14:22:18</div>
+              <div class="dv-bbl u">Build me a Python REST API with JWT auth</div>
+            </div>
+          </div>
+
+          <div class="dv-msg">
+            <div class="dv-av ai">D</div>
+            <div class="dv-mbody">
+              <div class="dv-mmeta">D.E.V.E // 14:22:19</div>
+              <div class="dv-bbl ai">Of course, sir. Here is a complete FastAPI implementation with JWT authentication, token refresh, and protected routes<span class="dv-cursor"></span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dv-ibar">
+          <div class="dv-ibtn"><i class="ti ti-microphone" aria-hidden="true"></i> MIC</div>
+          <div class="dv-inp">Issue command to D.E.V.E...</div>
+          <div class="dv-ibtn primary">SEND ▶</div>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL -->
+      <div class="dv-rp">
+        <div class="dv-rptabs">
+          <div class="dv-rpt on">MODELS</div>
+          <div class="dv-rpt">COMMANDS</div>
+          <div class="dv-rpt">AUTO</div>
+          <div class="dv-rpt">CONFIG</div>
+        </div>
+        <div class="dv-rpbody">
+          <div class="dv-slbl" style="margin-bottom:7px">LOCAL AI MODELS</div>
+
+          <div style="display:flex;align-items:center;gap:6px;background:rgba(0,200,255,.04);border:1px solid rgba(0,200,255,.09);border-radius:2px;padding:6px 8px;margin-bottom:8px">
+            <div style="width:6px;height:6px;border-radius:50%;background:#00ffaa;box-shadow:0 0 5px #00ffaa;flex-shrink:0"></div>
+            <div>
+              <div style="font-family:'Share Tech Mono',monospace;font-size:8.5px;color:#c8eeff">Ollama connected — 3 models</div>
+              <div style="font-family:'Share Tech Mono',monospace;font-size:7px;color:rgba(150,210,240,.35)">Local engine · zero internet</div>
+            </div>
+          </div>
+
+          <div class="dv-mc on">
+            <div class="dv-mc-name">llama3</div>
+            <div class="dv-mc-desc">Active · 4.7 GB · Meta</div>
+            <span class="dv-tag g">LOCAL</span><span class="dv-tag">OFFLINE</span><span class="dv-tag">ACTIVE</span>
+          </div>
+          <div class="dv-mc">
+            <div class="dv-mc-name">mistral</div>
+            <div class="dv-mc-desc">4.1 GB · Fast & smart</div>
+            <span class="dv-tag g">LOCAL</span><span class="dv-tag">OFFLINE</span>
+          </div>
+          <div class="dv-mc">
+            <div class="dv-mc-name">codellama</div>
+            <div class="dv-mc-desc">3.8 GB · Best for coding</div>
+            <span class="dv-tag g">LOCAL</span><span class="dv-tag">OFFLINE</span>
+          </div>
+
+          <div class="dv-slbl" style="margin-top:10px;margin-bottom:6px">BACKGROUND TASKS</div>
+          <div class="dv-drows">
+            <div class="dv-dr"><span class="dv-dk">Smart Reminders</span><span class="dv-dv g">● ON</span></div>
+            <div class="dv-dr"><span class="dv-dk">Task Scheduler</span><span class="dv-dv g">● ON</span></div>
+            <div class="dv-dr"><span class="dv-dk">File Organizer</span><span class="dv-dv" style="color:rgba(150,210,240,.3)">○ OFF</span></div>
+            <div class="dv-dr"><span class="dv-dk">Cloud Sync</span><span class="dv-dv g">● ON</span></div>
+            <div class="dv-dr"><span class="dv-dk">Code Watcher</span><span class="dv-dv" style="color:rgba(150,210,240,.3)">○ OFF</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+
+    <!-- STATUS BAR -->
+    <div class="dv-sb">
+      <div class="dot"></div>
+      <span>OLLAMA <b>ONLINE</b></span>
+      <span>MODEL <b>llama3</b></span>
+      <span>UPTIME <b>00:14:22</b></span>
+      <span>BG TASKS <b>12</b></span>
+      <span style="flex:1"></span>
+      <span style="color:rgba(0,200,255,.18)">D.E.V.E v1.0 — 100% LOCAL AI — ZERO INTERNET REQUIRED</span>
+    </div>
+
+    <!-- TRAY TOOLTIP (cosmetic) -->
+    <div class="dv-tray">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#00c8ff;margin-bottom:2px">D.E.V.E — RUNNING IN TRAY</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:7px;color:rgba(150,210,240,.4)">Ctrl+Shift+D to restore · 12 bg tasks done</div>
+    </div>
+
+  </div>
+</div>

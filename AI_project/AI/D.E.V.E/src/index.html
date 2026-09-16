@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>D.E.V.E — Autonomous Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --arc:#00c8ff;--grn:#00ffaa;--gld:#ffd84d;
+  --red:#ff4060;--vio:#9b6dff;
+  --bg:#020b14;--p1:#060f1a;
+  --b1:rgba(0,200,255,.09);--b2:rgba(0,200,255,.22);
+  --tx:#c8eeff;--mu:rgba(150,210,240,.38);
+}
+html,body{height:100%;overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif}
+body{display:flex;align-items:center;justify-content:center}
+
+/* APP SHELL */
+.app{
+  background:var(--bg);border-radius:10px;overflow:hidden;
+  border:1px solid var(--b1);position:relative;
+  width:min(1100px,98vw);height:min(680px,96vh);
+  display:flex;flex-direction:column;
+}
+.scanlines{position:absolute;inset:0;pointer-events:none;z-index:200;border-radius:10px;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.055) 2px,rgba(0,0,0,.055) 4px)}
+canvas#bgc{position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:10px}
+
+/* TITLEBAR */
+.tb{height:36px;background:#010810;border-bottom:1px solid var(--b1);
+  display:flex;align-items:center;padding:0 12px;gap:8px;
+  flex-shrink:0;position:relative;z-index:10;-webkit-app-region:drag}
+.tb-logo{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:900;letter-spacing:.18em;color:#fff}
+.tb-logo em{color:var(--arc);font-style:normal}
+.tb-stats{display:flex;gap:14px;flex:1;padding-left:10px}
+.tbs{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--mu);letter-spacing:.05em}
+.tbs b{color:var(--arc)}
+.pdot{width:6px;height:6px;border-radius:50%;background:var(--grn);animation:pd 2s ease-in-out infinite;flex-shrink:0}
+@keyframes pd{0%,100%{opacity:1}50%{opacity:.2}}
+.wbtns{display:flex;margin-left:auto;-webkit-app-region:no-drag}
+.wb{width:38px;height:36px;border:none;background:transparent;color:rgba(150,210,240,.3);
+  font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.wb:hover{background:rgba(0,200,255,.07);color:var(--arc)}
+.wb.cls:hover{background:rgba(255,64,96,.15);color:var(--red)}
+
+/* MAIN */
+.main{flex:1;display:grid;grid-template-columns:46px 210px 1fr 220px;overflow:hidden;position:relative;z-index:1}
+
+/* RAIL */
+.rail{background:rgba(3,9,17,.9);border-right:1px solid var(--b1);
+  display:flex;flex-direction:column;align-items:center;padding:6px 0;gap:2px;overflow:hidden}
+.ri{width:38px;height:38px;border-radius:3px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:1px;cursor:pointer;color:var(--mu);
+  border:1px solid transparent;transition:all .15s;font-family:'Share Tech Mono',monospace;
+  -webkit-app-region:no-drag}
+.ri:hover,.ri.on{background:rgba(0,200,255,.07);border-color:var(--b1);color:var(--arc)}
+.ri svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.ri span{font-size:5.5px;letter-spacing:.04em}
+.rsep{width:24px;height:1px;background:var(--b1);margin:2px 0;flex-shrink:0}
+
+/* LEFT PANEL */
+.lp{background:rgba(4,11,20,.8);border-right:1px solid var(--b1);display:flex;flex-direction:column;overflow:hidden}
+.lsec{border-bottom:1px solid var(--b1);padding:9px 11px;flex-shrink:0}
+.lsec.grow{flex:1;overflow-y:auto}
+.lsec.grow::-webkit-scrollbar{width:2px}
+.lsec.grow::-webkit-scrollbar-thumb{background:rgba(0,200,255,.12)}
+.slbl{font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(150,210,240,.3);
+  letter-spacing:.12em;margin-bottom:6px;display:flex;align-items:center;gap:4px}
+.slbl::before{content:'//';color:var(--arc);opacity:.35}
+
+/* ORB */
+.orbwrap{display:flex;flex-direction:column;align-items:center;gap:7px;padding:6px 0 10px}
+.orb{width:62px;height:62px;border-radius:50%;position:relative;cursor:pointer;-webkit-app-region:no-drag}
+.or{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(0,200,255,.14);animation:osp 4s linear infinite}
+.or:nth-child(2){inset:-6px;border-color:rgba(0,200,255,.06);animation-duration:7s;animation-direction:reverse}
+.or:nth-child(3){inset:-14px;border-color:rgba(0,200,255,.03);animation-duration:12s}
+@keyframes osp{to{transform:rotate(360deg)}}
+.oc{position:absolute;inset:7px;border-radius:50%;background:rgba(0,40,80,.97);
+  border:1px solid rgba(0,200,255,.28);display:flex;align-items:center;justify-content:center;transition:all .3s}
+.oc.listen{background:rgba(0,55,28,.97);border-color:rgba(0,255,170,.45);animation:lp 1s ease-in-out infinite}
+.oc.think{background:rgba(28,0,65,.97);border-color:rgba(155,109,255,.45);animation:tp .55s ease-in-out infinite}
+.oc.speak{background:rgba(65,38,0,.97);border-color:rgba(255,216,77,.45)}
+@keyframes lp{0%,100%{box-shadow:0 0 14px rgba(0,255,170,.2)}50%{box-shadow:0 0 36px rgba(0,255,170,.5)}}
+@keyframes tp{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.ol{font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:900;color:#fff;text-shadow:0 0 10px var(--arc)}
+.ostat{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--mu);text-align:center;letter-spacing:.1em}
+.owave{display:flex;align-items:center;justify-content:center;gap:2px;height:18px}
+.ow{width:2px;border-radius:99px;background:var(--arc);animation:owv 1.4s ease-in-out infinite}
+@keyframes owv{0%,100%{height:2px;opacity:.14}50%{height:14px;opacity:.75}}
+.owave.idle .ow{animation:none;height:2px;opacity:.1}
+.owave.speak .ow{background:var(--gld)}
+.owave.listen .ow{background:var(--grn)}
+
+/* DATA */
+.drows{display:flex;flex-direction:column;gap:4px}
+.dr{display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:8.5px;
+  border-bottom:1px solid rgba(0,200,255,.04);padding-bottom:4px}
+.dr:last-child{border:none}
+.dk{color:var(--mu)}.dv{color:var(--arc)}
+.dv.g{color:var(--grn)}.dv.y{color:var(--gld)}.dv.r{color:var(--red)}
+
+/* PROGS */
+.progs{display:flex;flex-direction:column;gap:6px}
+.pgr{display:flex;flex-direction:column;gap:2px}
+.pgh{display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:8px}
+.pgk{color:var(--mu)}.pgv{color:var(--arc)}
+.pgt{height:2px;background:rgba(0,200,255,.06)}
+.pgf{height:100%;position:relative}
+.pgf::after{content:'';position:absolute;right:0;top:0;height:100%;width:3px;background:#fff;opacity:.4;filter:blur(1px)}
+
+/* CENTER */
+.center{display:flex;flex-direction:column;overflow:hidden;background:rgba(2,7,14,.6)}
+.feed{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.feed::-webkit-scrollbar{width:2px}
+.feed::-webkit-scrollbar-thumb{background:rgba(0,200,255,.1);border-radius:9px}
+.sysmsg{font-family:'Share Tech Mono',monospace;font-size:8.5px;color:rgba(150,210,240,.28);
+  text-align:center;padding:5px;letter-spacing:.05em;
+  border-top:1px solid rgba(0,200,255,.04);border-bottom:1px solid rgba(0,200,255,.04)}
+.sysmsg b{color:var(--arc)}
+.msg{display:flex;gap:7px;animation:mi .22s ease}
+@keyframes mi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.msg.u{flex-direction:row-reverse}
+.av{width:22px;height:22px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Orbitron',sans-serif;font-size:6.5px;font-weight:700;border:1px solid;margin-top:2px}
+.av.ai{background:rgba(0,200,255,.07);color:var(--arc);border-color:rgba(0,200,255,.22)}
+.av.u{background:rgba(155,109,255,.07);color:var(--vio);border-color:rgba(155,109,255,.22)}
+.mbody{max-width:85%;display:flex;flex-direction:column;gap:2px}
+.msg.u .mbody{align-items:flex-end}
+.mmeta{font-family:'Share Tech Mono',monospace;font-size:7.5px;color:rgba(150,210,240,.28)}
+.bbl{padding:8px 11px;border-radius:2px;font-size:13px;line-height:1.65;
+  font-family:'Rajdhani',sans-serif;word-break:break-word;white-space:pre-wrap}
+.bbl.ai{background:rgba(0,200,255,.04);border:1px solid var(--b1);border-left:2px solid var(--arc);color:var(--tx)}
+.bbl.u{background:rgba(155,109,255,.05);border:1px solid rgba(155,109,255,.14);
+  border-right:2px solid var(--vio);color:var(--tx);text-align:right}
+.bbl pre{background:rgba(0,0,0,.5);border:1px solid rgba(0,200,255,.1);border-radius:2px;
+  padding:10px;margin:6px 0;font-family:'Share Tech Mono',monospace;font-size:10.5px;
+  overflow-x:auto;white-space:pre;color:#00ffaa;line-height:1.5}
+.bbl code{font-family:'Share Tech Mono',monospace;font-size:10.5px;color:#00ffaa;
+  background:rgba(0,255,170,.05);padding:1px 4px;border-radius:2px}
+
+/* TYPING INDICATOR */
+.typing{display:flex;gap:4px;padding:8px 11px;align-items:center}
+.typing-dot{width:5px;height:5px;border-radius:50%;background:var(--arc);
+  animation:tdot 1.2s ease-in-out infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes tdot{0%,60%,100%{opacity:.2;transform:scale(.8)}30%{opacity:1;transform:scale(1)}}
+
+/* INPUT */
+.ibar{border-top:1px solid var(--b1);padding:8px 12px;display:flex;gap:6px;
+  align-items:flex-end;background:rgba(2,8,16,.97);flex-shrink:0}
+.inp{flex:1;background:rgba(0,200,255,.03);border:1px solid var(--b1);border-radius:2px;
+  padding:7px 11px;color:var(--tx);font-family:'Share Tech Mono',monospace;font-size:11px;
+  outline:none;resize:none;min-height:32px;max-height:80px;transition:border-color .2s;line-height:1.4}
+.inp::placeholder{color:rgba(150,210,240,.22)}
+.inp:focus{border-color:var(--b2)}
+.ibtn{height:32px;padding:0 11px;background:transparent;border:1px solid var(--b1);border-radius:2px;
+  color:var(--mu);font-family:'Share Tech Mono',monospace;font-size:8.5px;cursor:pointer;
+  letter-spacing:.06em;transition:all .16s;white-space:nowrap;display:flex;align-items:center;gap:4px;flex-shrink:0}
+.ibtn:hover{border-color:var(--arc);color:var(--arc)}
+.ibtn.primary{border-color:var(--b2);color:var(--arc)}
+.ibtn.primary:hover{background:rgba(0,200,255,.08)}
+.ibtn.mic.hot{border-color:var(--grn);color:var(--grn);background:rgba(0,255,170,.05);animation:mh 1s ease-in-out infinite}
+@keyframes mh{0%,100%{box-shadow:0 0 0 0 rgba(0,255,170,.3)}50%{box-shadow:0 0 0 4px rgba(0,255,170,0)}}
+.ibtn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.5}
+
+/* RIGHT PANEL */
+.rp{background:rgba(4,11,20,.8);border-left:1px solid var(--b1);display:flex;flex-direction:column;overflow:hidden}
+.rptabs{display:flex;border-bottom:1px solid var(--b1);flex-shrink:0}
+.rpt{flex:1;padding:8px 0;text-align:center;font-family:'Share Tech Mono',monospace;font-size:7px;
+  letter-spacing:.07em;color:var(--mu);border-bottom:1px solid transparent;cursor:pointer;transition:all .15s}
+.rpt:hover{color:var(--tx)}
+.rpt.on{color:var(--arc);border-bottom-color:var(--arc)}
+.rpbody{flex:1;overflow-y:auto;padding:10px 11px}
+.rpbody::-webkit-scrollbar{width:2px}
+.rpbody::-webkit-scrollbar-thumb{background:rgba(0,200,255,.1)}
+
+/* QUICK CMDS */
+.qlist{display:flex;flex-direction:column;gap:4px}
+.qcmd{border:1px solid var(--b1);border-radius:2px;padding:6px 8px;
+  font-family:'Share Tech Mono',monospace;font-size:8.5px;color:var(--mu);
+  cursor:pointer;transition:all .15s;display:flex;align-items:flex-start;gap:5px;line-height:1.4;-webkit-app-region:no-drag}
+.qcmd:hover{border-color:var(--arc);color:var(--arc);background:rgba(0,200,255,.03)}
+.qp{color:var(--arc);opacity:.5;flex-shrink:0;margin-top:1px}
+
+/* AUTO ITEMS */
+.autoitem{border:1px solid var(--b1);border-radius:2px;padding:7px 9px;
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.ailbl{font-family:'Share Tech Mono',monospace;font-size:8.5px;color:var(--tx)}
+.aistat{font-family:'Share Tech Mono',monospace;font-size:7.5px;margin-top:2px}
+.aistat.run{color:var(--grn)}.aistat.idle{color:var(--mu)}
+.aitog{width:28px;height:13px;border-radius:99px;border:1px solid var(--b1);
+  cursor:pointer;position:relative;background:transparent;flex-shrink:0;transition:all .2s}
+.aitog.on{background:rgba(0,255,170,.1);border-color:rgba(0,255,170,.32)}
+.aitog::after{content:'';position:absolute;top:1px;left:1px;width:9px;height:9px;
+  border-radius:50%;background:var(--mu);transition:all .2s}
+.aitog.on::after{left:16px;background:var(--grn)}
+
+/* NOTIF */
+.notif{border:1px solid var(--b1);border-radius:2px;padding:7px 8px;margin-bottom:4px;
+  display:flex;gap:7px;cursor:pointer;transition:all .15s}
+.notif:hover{background:rgba(0,200,255,.03)}
+.notif.unread{border-color:rgba(0,200,255,.2)}
+.ndot{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.ntxt{font-family:'Share Tech Mono',monospace;font-size:8.5px;color:var(--tx);line-height:1.45}
+.ntime{font-family:'Share Tech Mono',monospace;font-size:7px;color:var(--mu);margin-top:2px}
+
+/* CFG */
+.cg{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--mu);letter-spacing:.08em;margin-bottom:5px;margin-top:8px}
+.cg-inp{width:100%;background:rgba(0,200,255,.03);border:1px solid var(--b1);border-radius:2px;
+  padding:6px 9px;color:var(--tx);font-family:'Share Tech Mono',monospace;font-size:9.5px;
+  outline:none;margin-bottom:8px;transition:border-color .15s}
+.cg-inp:focus{border-color:var(--b2)}
+.cg-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.cg-lbl{font-family:'Share Tech Mono',monospace;font-size:8.5px;color:var(--tx)}
+.sftog{width:30px;height:14px;border-radius:99px;border:1px solid var(--b1);
+  cursor:pointer;position:relative;background:transparent;flex-shrink:0;transition:all .2s}
+.sftog.on{background:rgba(0,200,255,.1);border-color:var(--b2)}
+.sftog::after{content:'';position:absolute;top:1px;left:1px;width:10px;height:10px;
+  border-radius:50%;background:var(--mu);transition:all .2s}
+.sftog.on::after{left:17px;background:var(--arc)}
+.cg-btn{width:100%;padding:7px;background:rgba(0,200,255,.05);border:1px solid var(--b2);
+  border-radius:2px;color:var(--arc);font-family:'Share Tech Mono',monospace;font-size:8.5px;
+  cursor:pointer;letter-spacing:.08em;transition:all .15s;margin-bottom:5px}
+.cg-btn:hover{background:rgba(0,200,255,.1)}
+.cg-note{font-family:'Share Tech Mono',monospace;font-size:7.5px;color:var(--mu);line-height:1.55}
+
+/* STATUS BAR */
+.sb{height:20px;border-top:1px solid var(--b1);background:rgba(1,8,16,.99);
+  display:flex;align-items:center;padding:0 12px;gap:16px;
+  font-family:'Share Tech Mono',monospace;font-size:7.5px;color:rgba(150,210,240,.28);
+  flex-shrink:0;position:relative;z-index:10}
+.sb b{color:var(--arc)}
+
+/* VOICE BANNER */
+.vbanner{position:absolute;top:44px;left:50%;transform:translateX(-50%);
+  background:rgba(0,55,28,.97);border:1px solid rgba(0,255,170,.3);border-radius:3px;
+  padding:8px 18px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--grn);
+  z-index:300;display:none;align-items:center;gap:12px;letter-spacing:.06em}
+.vbanner.show{display:flex}
+.vw{width:2px;border-radius:99px;background:var(--grn);animation:owv 1.2s ease-in-out infinite;display:inline-block;margin:0 1px}
+
+/* TOAST */
+.toast{position:absolute;bottom:28px;left:50%;transform:translateX(-50%) translateY(12px);
+  background:rgba(6,15,26,.98);border:1px solid var(--b2);border-radius:2px;
+  padding:6px 16px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--arc);
+  z-index:999;opacity:0;transition:all .28s;pointer-events:none;white-space:nowrap;letter-spacing:.06em}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:900px){
+  .main{grid-template-columns:1fr}
+  .rail,.lp,.rp{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <canvas id="bgc"></canvas>
+  <div class="scanlines"></div>
+
+  <!-- VOICE BANNER -->
+  <div class="vbanner" id="vbanner">
+    <span class="vw" style="animation-delay:.00s;height:6px"></span>
+    <span class="vw" style="animation-delay:.10s;height:6px"></span>
+    <span class="vw" style="animation-delay:.20s;height:6px"></span>
+    <span class="vw" style="animation-delay:.05s;height:6px"></span>
+    <span class="vw" style="animation-delay:.15s;height:6px"></span>
+    <span id="vtxt">Listening... say your command</span>
+    <button onclick="cancelVoice()" style="background:transparent;border:1px solid rgba(255,64,96,.3);border-radius:2px;padding:3px 10px;font-family:'Share Tech Mono',monospace;font-size:8px;color:#ff4060;cursor:pointer">CANCEL</button>
+  </div>
+
+  <!-- TITLEBAR -->
+  <div class="tb">
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="6" stroke="#00c8ff" stroke-opacity=".3"/><text x="6.5" y="9.8" font-size="7.5" text-anchor="middle" fill="#00c8ff" font-family="monospace" font-weight="900">D</text></svg>
+    <div class="tb-logo">D.E.V.<em>E</em></div>
+    <div class="tb-stats">
+      <div class="tbs">STATUS <b>INDEPENDENT</b></div>
+      <div class="tbs">AI <b>INTERNAL</b></div>
+      <div class="tbs">MSGS <b id="t-msgs">0</b></div>
+      <div class="tbs">UPTIME <b id="t-uptime">00:00:00</b></div>
+      <div class="tbs">INTERNET <b id="t-internet" style="color:#ff4060">NONE</b></div>
+    </div>
+    <div class="pdot" style="margin-left:auto;margin-right:8px"></div>
+    <div class="wbtns">
+      <div class="wb" onclick="window.deve?.minimize?.()">─</div>
+      <div class="wb" onclick="window.deve?.maximize?.()">□</div>
+      <div class="wb cls" onclick="window.deve?.hide?.()">✕</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- RAIL -->
+    <div class="rail">
+      <div class="ri on" onclick="railClick(this)" title="Chat">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>CHAT</span>
+      </div>
+      <div class="ri" onclick="railClick(this);qsend('Write me complete production-ready code. What should I build?')" title="Code">
+        <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg><span>CODE</span>
+      </div>
+      <div class="ri" onclick="railClick(this);qsend('Help me design something — branding, UI concepts, or visual strategy.')" title="Design">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span>DESIGN</span>
+      </div>
+      <div class="ri" onclick="railClick(this);qsend('Give me a comprehensive financial plan and investment strategy.')" title="Finance">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span>FIN</span>
+      </div>
+      <div class="ri" onclick="railClick(this);qsend('Help me write something — email, essay, script, report, or any content.')" title="Write">
+        <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span>WRITE</span>
+      </div>
+      <div class="ri" onclick="railClick(this);qsend('Explain something to me in depth — with examples and clear analogies.')" title="Learn">
+        <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>LEARN</span>
+      </div>
+      <div class="ri" onclick="railClick(this);qsend('Help me build a business plan, startup strategy, or go-to-market plan.')" title="Business">
+        <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg><span>BIZ</span>
+      </div>
+      <div class="rsep"></div>
+      <div class="ri" onclick="railClick(this);qsend('Create an automation script for a repetitive task I need handled.')" title="Automate">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span>AUTO</span>
+      </div>
+      <div class="ri" onclick="railClick(this);qsend('Create a detailed fitness and nutrition plan for my goals.')" title="Health">
+        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span>HEALTH</span>
+      </div>
+    </div>
+
+    <!-- LEFT PANEL -->
+    <div class="lp">
+      <div class="lsec">
+        <div class="slbl">CORE AI</div>
+        <div class="orbwrap">
+          <div class="orb" onclick="startVoice()" title="Click to speak">
+            <div class="or"></div><div class="or"></div><div class="or"></div>
+            <div class="oc" id="oc"><div class="ol">D</div></div>
+          </div>
+          <div class="ostat" id="ostat">CLICK TO SPEAK</div>
+          <div class="owave idle" id="owave">
+            <div class="ow" style="animation-delay:.00s"></div><div class="ow" style="animation-delay:.10s"></div>
+            <div class="ow" style="animation-delay:.20s"></div><div class="ow" style="animation-delay:.05s"></div>
+            <div class="ow" style="animation-delay:.15s"></div><div class="ow" style="animation-delay:.25s"></div>
+            <div class="ow" style="animation-delay:.08s"></div>
+          </div>
+        </div>
+      </div>
+      <div class="lsec">
+        <div class="slbl">SYSTEM</div>
+        <div class="drows">
+          <div class="dr"><span class="dk">AI ENGINE</span><span class="dv g">INTERNAL</span></div>
+          <div class="dr"><span class="dk">INTERNET</span><span class="dv r" id="s-internet">NONE</span></div>
+          <div class="dr"><span class="dk">BACKGROUND</span><span class="dv g">ACTIVE</span></div>
+          <div class="dr"><span class="dk">VOICE</span><span class="dv" id="s-voice">READY</span></div>
+          <div class="dr"><span class="dk">MEMORY</span><span class="dv" id="s-mem">0 TURNS</span></div>
+          <div class="dr"><span class="dk">KNOWLEDGE</span><span class="dv y">425 CAPS</span></div>
+        </div>
+      </div>
+      <div class="lsec grow">
+        <div class="slbl">MODULES</div>
+        <div class="progs">
+          <div class="pgr"><div class="pgh"><span class="pgk">REASONING</span><span class="pgv">ACTIVE</span></div><div class="pgt"><div class="pgf" style="width:82%;background:linear-gradient(90deg,#00ffaa,#0af)"></div></div></div>
+          <div class="pgr"><div class="pgh"><span class="pgk">KNOWLEDGE BASE</span><span class="pgv">LOADED</span></div><div class="pgt"><div class="pgf" style="width:100%;background:linear-gradient(90deg,#0af,#9b6dff)"></div></div></div>
+          <div class="pgr"><div class="pgh"><span class="pgk">CODE ENGINE</span><span class="pgv">READY</span></div><div class="pgt"><div class="pgf" style="width:90%;background:linear-gradient(90deg,#ffd84d,#ff8c42)"></div></div></div>
+          <div class="pgr"><div class="pgh"><span class="pgk">VOICE ENGINE</span><span class="pgv" id="vm">STANDBY</span></div><div class="pgt"><div class="pgf" style="width:35%;background:linear-gradient(90deg,#ff6b6b,#ffd84d)"></div></div></div>
+          <div class="pgr"><div class="pgh"><span class="pgk">BACKGROUND OPS</span><span class="pgv">RUNNING</span></div><div class="pgt"><div class="pgf" style="width:100%;background:linear-gradient(90deg,#00ffaa,#4f8fff)"></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER CHAT -->
+    <div class="center">
+      <div class="feed" id="feed">
+        <div class="sysmsg">// <b>D.E.V.E INTERNAL AI SYSTEM ONLINE</b> — INTERNET MODE AVAILABLE — 100% CONTROLLED //</div>
+      </div>
+      <div class="ibar">
+        <button class="ibtn mic" id="micbtn" onclick="startVoice()" title="Voice input">
+          <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          MIC
+        </button>
+        <textarea class="inp" id="inp" rows="1"
+          placeholder='Ask D.E.V.E anything... (Enter to send)'
+          onkeydown="kdown(event)" oninput="rsz(this)"></textarea>
+        <button class="ibtn primary" onclick="send()">SEND ▶</button>
+        <button class="ibtn" onclick="clearChat()" title="Clear conversation">
+          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="rp">
+      <div class="rptabs">
+        <div class="rpt on" onclick="rptab('cmds',this)">COMMANDS</div>
+        <div class="rpt" onclick="rptab('auto',this)">AUTO</div>
+        <div class="rpt" onclick="rptab('notif',this)">ALERTS</div>
+        <div class="rpt" onclick="rptab('cfg',this)">CFG</div>
+      </div>
+
+      <div class="rpbody" id="rp-cmds">
+        <div class="slbl" style="margin-bottom:7px">QUICK COMMANDS</div>
+        <div class="qlist">
+          <div class="qcmd" onclick="qsend('Build me a complete Python REST API with FastAPI and SQLite')"><span class="qp">▶</span>Python REST API</div>
+          <div class="qcmd" onclick="qsend('Write a complete React TypeScript component with hooks, validation, and error handling')"><span class="qp">▶</span>React TypeScript component</div>
+          <div class="qcmd" onclick="qsend('Create a Python file organizer automation script that sorts files by type and date')"><span class="qp">▶</span>File automation script</div>
+          <div class="qcmd" onclick="qsend('Build a complete full-stack JavaScript app with Express and SQLite')"><span class="qp">▶</span>Full-stack JS app</div>
+          <div class="qcmd" onclick="qsend('Analyze my gaming setup and recommend FPS optimization, latency tuning, build choices, and crosshair customization')"><span class="qp">▶</span>Gaming optimization</div>
+          <div class="qcmd" onclick="qsend('Design an AI game assistant with NPC intelligence, gameplay coaching, and adaptive difficulty suggestions')"><span class="qp">▶</span>Game assistant</div>
+          <div class="qcmd" onclick="qsend('Create a content creator workflow for auto captions, highlight extraction, thumbnails, and SEO optimization')"><span class="qp">▶</span>Creator workflow</div>
+          <div class="qcmd" onclick="qsend('Search the internet for the latest information on artificial intelligence trends')"><span class="qp">▶</span>Internet search</div>
+          <div class="qcmd" onclick="qsend('Create a 30-day viral social media content calendar with hooks and captions')"><span class="qp">▶</span>30-day content plan</div>
+          <div class="qcmd" onclick="qsend('Build a complete startup business plan with market analysis, MVP, and monetization')"><span class="qp">▶</span>Startup business plan</div>
+          <div class="qcmd" onclick="qsend('Create a comprehensive personal finance plan with budget, savings, and investments')"><span class="qp">▶</span>Personal finance plan</div>
+          <div class="qcmd" onclick="qsend('Design a complete brand identity with colors, typography, and voice guide')"><span class="qp">▶</span>Full brand identity</div>
+          <div class="qcmd" onclick="qsend('Create a 12-week progressive fitness and nutrition plan for my goals')"><span class="qp">▶</span>12-week fitness plan</div>
+          <div class="qcmd" onclick="qsend('Explain artificial intelligence from first principles with examples and analogies')"><span class="qp">▶</span>Explain AI deeply</div>
+          <div class="qcmd" onclick="qsend('Write a compelling short story with vivid characters and a twist ending')"><span class="qp">▶</span>Write a story</div>
+          <div class="qcmd" onclick="qsend('Write the perfect professional email for my situation')"><span class="qp">▶</span>Write a professional email</div>
+        </div>
+      </div>
+
+      <div class="rpbody" id="rp-auto" style="display:none">
+        <div class="slbl" style="margin-bottom:7px">BACKGROUND AUTOMATIONS</div>
+        <div id="autolist"></div>
+      </div>
+
+      <div class="rpbody" id="rp-notif" style="display:none">
+        <div class="slbl" style="margin-bottom:7px">SYSTEM ALERTS</div>
+        <div id="notiflist"></div>
+      </div>
+
+      <div class="rpbody" id="rp-cfg" style="display:none">
+        <div class="slbl" style="margin-bottom:6px">CONFIGURATION</div>
+
+        <div style="background:rgba(0,255,170,.04);border:1px solid rgba(0,255,170,.18);border-radius:2px;padding:8px 10px;margin-bottom:12px">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#00ffaa;margin-bottom:3px">● INTERNET MODE AVAILABLE</div>
+          <div id="cfg-internet-note" style="font-family:'Share Tech Mono',monospace;font-size:7.5px;color:var(--mu);line-height:1.55">Enable Internet Mode to allow D.E.V.E to use online resources and external links when available. Keep it off for local-only operation.</div>
+        </div>
+
+        <div class="cg">AI PERSONALITY NAME</div>
+        <input class="cg-inp" type="text" id="cfg-name" value="D.E.V.E" placeholder="D.E.V.E"/>
+
+        <div class="cg">RESPONSE STYLE</div>
+        <select id="cfg-style" style="width:100%;background:rgba(0,200,255,.03);border:1px solid var(--b1);border-radius:2px;padding:6px 9px;color:var(--tx);font-family:'Share Tech Mono',monospace;font-size:9.5px;outline:none;margin-bottom:8px">
+          <option value="jarvis">JARVIS — formal, intelligent, precise</option>
+          <option value="casual">Casual — friendly and conversational</option>
+          <option value="concise">Ultra-concise — short answers only</option>
+          <option value="technical">Technical — maximum detail and depth</option>
+        </select>
+
+        <div class="cg">FAST RESPONSE</div>
+        <div class="cg-row"><span class="cg-lbl">Fast answer mode</span><div class="sftog" id="tog-fast" onclick="togCfg('fast')"></div></div>
+
+        <div class="cg" style="margin-top:4px">FEATURES</div>
+        <div class="cg-row"><span class="cg-lbl">Text-to-speech responses</span><div class="sftog on" id="tog-tts" onclick="togCfg('tts')"></div></div>
+        <div class="cg-row"><span class="cg-lbl">Voice input (microphone)</span><div class="sftog on" id="tog-voice" onclick="togCfg('voice')"></div></div>
+        <div class="cg-row"><span class="cg-lbl">Background operations</span><div class="sftog on" id="tog-bg" onclick="togCfg('bg')"></div></div>
+        <div class="cg-row"><span class="cg-lbl">Typing animation effect</span><div class="sftog on" id="tog-type" onclick="togCfg('type')"></div></div>
+        <div class="cg-row"><span class="cg-lbl">Internet mode</span><div class="sftog" id="tog-internet" onclick="togCfg('internet')"></div></div>
+
+        <button class="cg-btn" onclick="saveCfg()">SAVE CONFIGURATION ▶</button>
+        <button class="cg-btn" onclick="clearChat()" style="border-color:var(--b1);color:var(--mu)">CLEAR CONVERSATION</button>
+
+        <div class="cg" style="margin-top:8px">ABOUT</div>
+        <div class="cg-note">D.E.V.E v1.0 — Digital Engineered Virtual Entity<br/>Created by Emmanuel Divine Suubi Mukaga<br/>Internal AI Engine — Zero external dependencies<br/>No internet connection required</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div class="sb">
+    <div class="pdot"></div>
+    <span>ENGINE <b>INTERNAL</b></span>
+    <span>INTERNET <b style="color:#ff4060">NONE</b></span>
+    <span>UPTIME <b id="sb-uptime">00:00:00</b></span>
+    <span>BG <b id="sb-bg">0</b></span>
+    <span style="flex:1"></span>
+    <span style="color:rgba(0,200,255,.14)">D.E.V.E v1.0 — 100% INDEPENDENT — ZERO EXTERNAL AI</span>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<!-- DEVE BRAIN — LOADED FROM EXTERNAL ASSET -->
+<script src="deve-brain.js"></script>
+<script>
+// ══════════════════════════════════════════
+//   D.E.V.E INTERNAL KNOWLEDGE ENGINE
+//   Zero external AI. Runs 100% locally.
+// ══════════════════════════════════════════
+
+// D.E.V.E brain loaded from deve-brain.js
+
+//   D.E.V.E APP CONTROLLER
+// ══════════════════════════
+
+const brain=new DEVEBrain();
+const synth=window.speechSynthesis;
+let recognition=null;
+let bgTasks=0;
+let startTime=Date.now();
+const CFG=JSON.parse(localStorage.getItem('deve_cfg')||'{"tts":true,"voice":true,"bg":true,"type":true,"internet":false,"fast":true}');
+const AUTOS=[
+  {name:'Smart Reminders',on:true},{name:'Task Scheduler',on:true},
+  {name:'File Organizer',on:true},{name:'Creator Workflow',on:true},
+  {name:'Game Coach',on:true},{name:'Content Publisher',on:false},
+  {name:'Backup Agent',on:true},{name:'System Watcher',on:false},
+];
+
+// CANVAS
+const cv=document.getElementById('bgc');
+const cx=cv.getContext('2d');
+let pts=[];
+function initCv(){
+  cv.width=window.innerWidth;cv.height=window.innerHeight;
+  pts=Array.from({length:50},()=>({x:Math.random()*cv.width,y:Math.random()*cv.height,vx:(Math.random()-.5)*.2,vy:(Math.random()-.5)*.2,r:Math.random()*.9+.3,a:Math.random()}));
+}
+function drawCv(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  pts.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<0)p.x=cv.width;if(p.x>cv.width)p.x=0;
+    if(p.y<0)p.y=cv.height;if(p.y>cv.height)p.y=0;
+    cx.beginPath();cx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    cx.fillStyle=`rgba(0,200,255,${p.a*.18})`;cx.fill();
+  });
+  for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){
+    const d=Math.hypot(pts[i].x-pts[j].x,pts[i].y-pts[j].y);
+    if(d<88){cx.beginPath();cx.moveTo(pts[i].x,pts[i].y);cx.lineTo(pts[j].x,pts[j].y);
+      cx.strokeStyle=`rgba(0,200,255,${(1-d/88)*.042})`;cx.lineWidth=.4;cx.stroke();}
+  }
+  requestAnimationFrame(drawCv);
+}
+window.addEventListener('resize',initCv);
+initCv();drawCv();
+
+// CLOCK
+setInterval(()=>{
+  const s=Math.floor((Date.now()-startTime)/1000);
+  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+  const str=`${pad(h)}:${pad(m)}:${pad(sec)}`;
+  document.getElementById('t-uptime').textContent=str;
+  document.getElementById('sb-uptime').textContent=str;
+},1000);
+function pad(n){return String(n).padStart(2,'0');}
+
+// BG TASKS
+const bgLog=['Monitoring workflows...','Indexing knowledge base...','Running scheduler...','Passive scan...','Compressing context...','Updating module status...'];
+let bgI=0;
+setInterval(()=>{
+  if(!CFG.bg)return;
+  bgTasks++;bgI++;
+  document.getElementById('sb-bg').textContent=bgTasks;
+  if(bgTasks%4===0)addNotif(bgLog[bgI%bgLog.length],'y');
+},14000);
+
+// ORB
+function setOrb(state){
+  const oc=document.getElementById('oc');
+  const ow=document.getElementById('owave');
+  const os=document.getElementById('ostat');
+  const sv=document.getElementById('s-voice');
+  const vm=document.getElementById('vm');
+  oc.className='oc';ow.className='owave';
+  if(state==='listen'){oc.classList.add('listen');ow.classList.add('listen');os.textContent='LISTENING...';sv.textContent='ACTIVE';vm.textContent='LISTENING';document.getElementById('micbtn').classList.add('hot');}
+  else if(state==='think'){oc.classList.add('think');os.textContent='PROCESSING...';vm.textContent='PROCESSING';document.getElementById('micbtn').classList.remove('hot');}
+  else if(state==='speak'){oc.classList.add('speak');ow.classList.add('speak');os.textContent='SPEAKING...';vm.textContent='SPEAKING';}
+  else{os.textContent='CLICK TO SPEAK';sv.textContent='READY';vm.textContent='STANDBY';document.getElementById('micbtn').classList.remove('hot');}
+}
+
+// CHAT
+function addUserMsg(text){
+  const feed=document.getElementById('feed');
+  const t=new Date().toLocaleTimeString();
+  const d=document.createElement('div');d.className='msg u';
+  d.innerHTML=`<div class="av u">U</div><div class="mbody"><div class="mmeta">YOU // ${t}</div><div class="bbl u"></div></div>`;
+  d.querySelector('.bbl').textContent=text;
+  feed.appendChild(d);scrollFeed();
+}
+
+function addAIMsg(text){
+  const feed=document.getElementById('feed');
+  const t=new Date().toLocaleTimeString();
+  const d=document.createElement('div');d.className='msg';
+
+  // typing indicator
+  if(CFG.type){
+    d.innerHTML=`<div class="av ai">D</div><div class="mbody"><div class="mmeta">D.E.V.E // ${t}</div><div class="typing"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+    feed.appendChild(d);scrollFeed();
+      const delay = CFG.fast ? 100 + Math.min(text.length, 240) : 400 + Math.min(text.length * 2, 800);
+  }
+
+  d.innerHTML=`<div class="av ai">D</div><div class="mbody"><div class="mmeta">D.E.V.E // ${t}</div><div class="bbl ai"></div></div>`;
+  renderBubble(d.querySelector('.bbl'),text);
+  feed.appendChild(d);scrollFeed();
+  return Promise.resolve();
+}
+
+function renderBubble(el,text){
+  let h=text
+    .replace(/```(\w*)\n?([\s\S]*?)```/g,'<pre>$2</pre>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\*\*(.*?)\*\*/g,'<strong style="color:#fff">$1</strong>')
+    .replace(/\n/g,'<br>');
+  el.innerHTML=h;
+}
+
+function scrollFeed(){const f=document.getElementById('feed');f.scrollTop=f.scrollHeight;}
+
+function isInternetSearchQuery(text){
+  const lower=text.toLowerCase();
+  return CFG.internet && /\b(search|look up|find|google|bing|duckduckgo|web search|online search|open web|weather|news|latest|current|define|definition)\b/.test(lower);
+}
+
+async function performOnlineSearch(query){
+  const trimmed=query.replace(/^(search|look up|find|google|bing|duckduckgo|web search|online search)\s+/i,'').trim();
+  const endpoint=`https://api.duckduckgo.com/?q=${encodeURIComponent(trimmed || query)}&format=json&no_html=1&skip_disambig=1&pretty=1`;
+  try {
+    const res=await fetch(endpoint);
+    if(!res.ok) throw new Error(res.status+' '+res.statusText);
+    const data=await res.json();
+    const lines=[data.Heading, data.AbstractText, data.Answer, data.Definition, data.RelatedTopics?.[0]?.Text].filter(Boolean);
+    let result=lines.join('\n\n').trim();
+    if(!result) result = 'I found online results but could not summarize them clearly. Please try a more specific query.';
+    if(data.AbstractURL) result += `\n\nMore details: <a href=\"#\" onclick=\"window.deve.openUrl('${data.AbstractURL.replace(/'/g, "\\'")}'); return false;\" style=\"color:#00ffaa;text-decoration:underline;\">Open result in browser</a>`;
+    return `Online search results for "${trimmed || query}":\n\n${result}`;
+  } catch (error) {
+    return `I attempted an online search but was unable to complete it: ${error.message}`;
+  }
+}
+
+async function send(override){
+  const inp=document.getElementById('inp');
+  const text=override||inp.value.trim();
+  if(!text)return;
+  inp.value='';rsz(inp);
+
+  addUserMsg(text);
+  setOrb('think');
+
+  brain.internetMode = CFG.internet;
+  let reply;
+  if (isInternetSearchQuery(text)) {
+    reply = await performOnlineSearch(text);
+  } else {
+    reply = brain.process(text);
+  }
+
+    document.getElementById('t-msgs').textContent=brain.messageCount;
+    document.getElementById('s-mem').textContent=brain.conversationHistory.length+' TURNS';
+
+    await addAIMsg(reply);
+    if (CFG.tts) {
+      setOrb('speak');
+      speak(reply, ()=>setOrb('idle'));
+    } else {
+      setOrb('idle');
+    }
+
+    return reply;
+}
+
+// TTS
+function speak(text,done){
+  if(!synth||!CFG.tts){if(done)done();return;}
+  synth.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.rate=1.05;u.pitch=0.85;u.volume=0.9;
+  const vs=synth.getVoices();
+  const pref=vs.find(v=>v.name.includes('Daniel')||v.name.includes('Google UK English Male')||v.name.includes('Alex'));
+  if(pref)u.voice=pref;
+  u.onend=()=>{if(done)done();};u.onerror=()=>{if(done)done();};
+  synth.speak(u);
+}
+synth?.getVoices();
+
+// VOICE INPUT
+function startVoice(){
+  if(!CFG.voice){toast('VOICE DISABLED IN CONFIG');return;}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){toast('VOICE: USE CHROME OR EDGE');return;}
+  if(synth)synth.cancel();
+  setOrb('listen');
+  document.getElementById('vbanner').classList.add('show');
+  document.getElementById('vtxt').textContent='Listening...';
+  recognition=new SR();
+  recognition.continuous=false;recognition.interimResults=true;recognition.lang='en-US';
+  recognition.onresult=e=>{
+    let interim='',final='';
+    for(let r of e.results){if(r.isFinal)final+=r[0].transcript;else interim+=r[0].transcript;}
+    document.getElementById('vtxt').textContent=final||interim||'Listening...';
+    document.getElementById('inp').value=final||interim;
+    if(final)finishVoice(final);
+  };
+  recognition.onerror=e=>{cancelVoice();if(e.error==='not-allowed')toast('MIC DENIED — CHECK PERMISSIONS');};
+  recognition.onend=()=>{const t=document.getElementById('inp').value.trim();if(t)finishVoice(t);else cancelVoice();};
+  try{recognition.start();}catch(e){cancelVoice();}
+}
+function finishVoice(text){
+  document.getElementById('vbanner').classList.remove('show');
+  if(recognition){try{recognition.stop();}catch(e){}recognition=null;}
+  if(text){document.getElementById('inp').value=text;send();}
+  else setOrb('idle');
+}
+function cancelVoice(){
+  document.getElementById('vbanner').classList.remove('show');
+  document.getElementById('micbtn').classList.remove('hot');
+  if(recognition){try{recognition.stop();}catch(e){}recognition=null;}
+  setOrb('idle');
+}
+
+// AUTOMATIONS
+function buildAutos(){
+  const el=document.getElementById('autolist');el.innerHTML='';
+  AUTOS.forEach((a,i)=>{
+    const d=document.createElement('div');d.className='autoitem';
+    d.innerHTML=`<div><div class="ailbl">${a.name}</div><div class="aistat ${a.on?'run':'idle'}" id="as${i}">${a.on?'● RUNNING':'○ IDLE'}</div></div><div class="aitog ${a.on?'on':''}" id="at${i}" onclick="togAuto(${i})"></div>`;
+    el.appendChild(d);
+  });
+}
+function togAuto(i){
+  AUTOS[i].on=!AUTOS[i].on;
+  document.getElementById('at'+i).className='aitog'+(AUTOS[i].on?' on':'');
+  document.getElementById('as'+i).textContent=AUTOS[i].on?'● RUNNING':'○ IDLE';
+  document.getElementById('as'+i).className='aistat '+(AUTOS[i].on?'run':'idle');
+  toast(AUTOS[i].name+(AUTOS[i].on?' ACTIVATED':' DEACTIVATED'));
+}
+
+// NOTIFICATIONS
+function addNotif(msg,type){
+  const list=document.getElementById('notiflist');
+  const first=list.firstChild;
+  if(first&&first.dataset&&first.dataset.empty)first.remove();
+  const t=new Date().toLocaleTimeString();
+  const d=document.createElement('div');d.className='notif unread';
+  d.innerHTML=`<div class="ndot" style="background:${type==='g'?'#00ffaa':type==='r'?'#ff4060':'#ffd84d'}"></div><div><div class="ntxt">${msg}</div><div class="ntime">${t}</div></div>`;
+  d.onclick=()=>d.classList.remove('unread');
+  list.insertBefore(d,list.firstChild);
+  if(list.children.length>15)list.removeChild(list.lastChild);
+  const alertTab=document.querySelector('.rpt:nth-child(4)');
+  if(alertTab&&!alertTab.classList.contains('on'))alertTab.style.color='#ffd84d';
+}
+
+// TABS
+function rptab(name,el){
+  document.querySelectorAll('.rpt').forEach(t=>{t.classList.remove('on');t.style.color='';});
+  document.querySelectorAll('.rpbody').forEach(b=>b.style.display='none');
+  el.classList.add('on');
+  document.getElementById('rp-'+name).style.display='block';
+}
+function railClick(el){document.querySelectorAll('.ri').forEach(r=>r.classList.remove('on'));el.classList.add('on');}
+function qsend(prompt){
+  const inp=document.getElementById('inp');
+  inp.value = prompt;
+  rsz(inp);
+  send(prompt);
+}
+
+// CFG
+function togCfg(k){
+  CFG[k]=!CFG[k];
+  document.getElementById('tog-'+k).className='sftog'+(CFG[k]?' on':'');
+  localStorage.setItem('deve_cfg',JSON.stringify(CFG));
+  if(k==='internet') updateInternetStatus();
+}
+function saveCfg(){
+  localStorage.setItem('deve_cfg',JSON.stringify(CFG));
+  toast('CONFIGURATION SAVED');
+}
+function updateInternetStatus(){
+  const enabled = !!CFG.internet;
+  const statusText = enabled ? 'ONLINE' : 'NONE';
+  const statusColor = enabled ? '#00ffaa' : '#ff4060';
+  const statusClass = enabled ? 'dv g' : 'dv r';
+  const tEl = document.getElementById('t-internet');
+  const sEl = document.getElementById('s-internet');
+  const sbEl = document.getElementById('sb-internet');
+  if(tEl){tEl.textContent=statusText;tEl.style.color=statusColor;}
+  if(sEl){sEl.textContent=statusText;sEl.className=statusClass;}
+  if(sbEl){sbEl.textContent=statusText;sbEl.style.color=statusColor;}
+  const note=document.getElementById('cfg-internet-note');
+  if(note){note.textContent=enabled?
+    'Internet Mode is enabled. D.E.V.E can use online resources and external links when available.' :
+    'Internet Mode is disabled. D.E.V.E remains local-only and independent.';
+  }
+}
+
+function applyCfg(){['tts','voice','bg','type','internet','fast'].forEach(k=>{const el=document.getElementById('tog-'+k);if(el)el.className='sftog'+(CFG[k]?' on':'');});
+  updateInternetStatus();
+}
+
+// CLEAR
+function clearChat(){
+  brain.clear();
+  document.getElementById('feed').innerHTML='<div class="sysmsg">// <b>SESSION CLEARED</b> — D.E.V.E READY //</div>';
+  document.getElementById('t-msgs').textContent='0';
+  document.getElementById('s-mem').textContent='0 TURNS';
+  toast('CONVERSATION CLEARED');
+}
+
+// HELPERS
+function kdown(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
+function rsz(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,80)+'px';}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// INIT
+buildAutos();
+if(typeof applyCfg==='function') applyCfg();
+addNotif('D.E.V.E internal AI system online — zero external AI','g');
+addNotif('All 425 capabilities loaded and ready','g');
+addNotif('Background engine active — monitoring workflows','y');
+
+setTimeout(async()=>{
+  const internetIntro = CFG.internet ? 'Internet Mode is enabled. D.E.V.E can access online resources when available.' : 'I am running 100% independently — no internet connection, no external AI, no Ollama, no API.';
+  await addAIMsg(`All systems operational, sir. D.E.V.E intelligence engine online.\n\n${internetIntro} My intelligence is built directly into this application.
+Creator: Emmanuel Divine Suubi Mukaga.\n\nI have 425 capabilities ready: coding in 10+ languages, design, finance, science, business strategy, writing, health planning, automation, and more.\n\nHow may I assist you today?');
+  if(CFG.tts){setOrb('speak');speak("All systems operational. D.E.V.E is online and fully independent. How may I assist you?",()=>setOrb('idle'));}
+  else setOrb('idle');
+},600);
+</script>
+</body>
+</html>

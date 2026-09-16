@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <rect width="256" height="256" rx="32" fill="#020b14"/>
+  <rect x="1" y="1" width="254" height="254" rx="31" fill="none" stroke="#00c8ff" stroke-width="2" stroke-opacity="0.4"/>
+  <text x="128" y="180" font-size="160" text-anchor="middle" font-family="monospace" font-weight="900" fill="#00c8ff">D</text>
+  <text x="128" y="230" font-size="22" text-anchor="middle" font-family="monospace" fill="#00c8ff" opacity="0.5" letter-spacing="8">E.V.E</text>
+</svg>

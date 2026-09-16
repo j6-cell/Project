@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>D.E.V.E — Full Autonomous Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --arc:#00c8ff;--grn:#00ffaa;--gld:#ffd84d;--red:#ff4060;--vio:#9b6dff;--org:#ff8c42;
+  --bg:#020b14;--p1:#06101a;--p2:#040d18;
+  --b1:rgba(0,200,255,.08);--b2:rgba(0,200,255,.2);--b3:rgba(0,200,255,.35);
+  --tx:#c8eeff;--mu:rgba(150,210,240,.38);--mu2:rgba(150,210,240,.22);
+}
+html,body{height:100%;overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;font-weight:400}
+body{display:flex;align-items:center;justify-content:center}
+.app{background:var(--bg);border-radius:12px;overflow:hidden;border:1px solid var(--b1);position:relative;width:min(1180px,99vw);height:min(720px,97vh);display:flex;flex-direction:column;box-shadow:0 0 100px rgba(0,200,255,.04),0 0 200px rgba(0,200,255,.02)}
+.scanlines{position:absolute;inset:0;pointer-events:none;z-index:500;border-radius:12px;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.045) 2px,rgba(0,0,0,.045) 4px)}
+canvas#bgc{position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:12px}
+
+/* TITLEBAR */
+.tb{height:38px;background:rgba(1,8,16,.99);border-bottom:1px solid var(--b1);display:flex;align-items:center;padding:0 12px;gap:10px;flex-shrink:0;position:relative;z-index:50}
+.tb-brand{display:flex;align-items:center;gap:8px}
+.tb-logo{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:900;letter-spacing:.2em;color:#fff;white-space:nowrap}
+.tb-logo em{color:var(--arc);font-style:normal}
+.tb-sep{width:1px;height:16px;background:var(--b1);flex-shrink:0}
+.tb-stats{display:flex;gap:12px;flex:1;overflow:hidden}
+.tbs{font-family:'Share Tech Mono',monospace;font-size:7.5px;color:var(--mu);letter-spacing:.05em;white-space:nowrap}
+.tbs b{color:var(--arc)}.tbs.g b{color:var(--grn)}.tbs.r b{color:var(--red)}.tbs.y b{color:var(--gld)}
+.pdot{width:6px;height:6px;border-radius:50%;background:var(--grn);box-shadow:0 0 6px var(--grn);animation:pd 2s ease-in-out infinite;flex-shrink:0}
+@keyframes pd{0%,100%{opacity:1}50%{opacity:.2}}
+.wbtns{display:flex;margin-left:auto;flex-shrink:0}
+.wb{width:36px;height:38px;border:none;background:transparent;color:rgba(150,210,240,.22);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.wb:hover{background:rgba(0,200,255,.07);color:var(--arc)}
+.wb.cls:hover{background:rgba(255,64,96,.12);color:var(--red)}
+
+/* LAYOUT */
+.main{flex:1;display:grid;grid-template-columns:48px 1fr 268px;overflow:hidden;position:relative;z-index:1}
+
+/* RAIL */
+.rail{background:rgba(2,8,15,.96);border-right:1px solid var(--b1);display:flex;flex-direction:column;align-items:center;padding:6px 0;gap:1px;overflow-y:auto}
+.rail::-webkit-scrollbar{display:none}
+.ri{width:38px;height:38px;border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;color:var(--mu);border:1px solid transparent;transition:all .14s;font-family:'Share Tech Mono',monospace;flex-shrink:0}
+.ri:hover,.ri.on{background:rgba(0,200,255,.07);border-color:var(--b1);color:var(--arc)}
+.ri svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.ri span{font-size:5px;letter-spacing:.04em;text-transform:uppercase}
+.rsep{width:26px;height:1px;background:var(--b1);margin:2px 0;flex-shrink:0}
+
+/* CENTER */
+.center{display:flex;flex-direction:column;overflow:hidden;background:rgba(2,7,13,.6)}
+.feed{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.feed::-webkit-scrollbar{width:2px}
+.feed::-webkit-scrollbar-thumb{background:rgba(0,200,255,.1);border-radius:9px}
+.sysmsg{font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(150,210,240,.24);text-align:center;padding:4px;letter-spacing:.06em;border-top:1px solid rgba(0,200,255,.04);border-bottom:1px solid rgba(0,200,255,.04)}
+.sysmsg b{color:var(--arc)}
+.msg{display:flex;gap:7px;animation:mi .2s ease}
+@keyframes mi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.msg.u{flex-direction:row-reverse}
+.av{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:6px;font-weight:700;border:1px solid;margin-top:2px}
+.av.ai{background:rgba(0,200,255,.08);color:var(--arc);border-color:rgba(0,200,255,.22)}
+.av.u{background:rgba(155,109,255,.08);color:var(--vio);border-color:rgba(155,109,255,.22)}
+.mbody{max-width:85%;display:flex;flex-direction:column;gap:2px}
+.msg.u .mbody{align-items:flex-end}
+.mmeta{font-family:'Share Tech Mono',monospace;font-size:7px;color:var(--mu2)}
+.bbl{padding:9px 12px;border-radius:3px;font-size:13px;line-height:1.65;font-family:'Rajdhani',sans-serif;word-break:break-word;white-space:pre-wrap}
+.bbl.ai{background:rgba(0,200,255,.04);border:1px solid var(--b1);border-left:2px solid var(--arc);color:var(--tx)}
+.bbl.u{background:rgba(155,109,255,.05);border:1px solid rgba(155,109,255,.14);border-right:2px solid var(--vio);color:var(--tx);text-align:right}
+.bbl pre{background:rgba(0,0,0,.55);border:1px solid rgba(0,200,255,.1);border-radius:2px;padding:10px;margin:6px 0;font-family:'Share Tech Mono',monospace;font-size:10.5px;overflow-x:auto;white-space:pre;color:#00ffaa;line-height:1.5}
+.bbl code{font-family:'Share Tech Mono',monospace;font-size:10.5px;color:#00ffaa;background:rgba(0,255,170,.06);padding:1px 4px;border-radius:2px}
+.bbl strong{color:#fff;font-weight:600}
+.bbl .section-head{font-family:'Orbitron',sans-serif;font-size:10px;color:var(--arc);letter-spacing:.1em;margin:8px 0 4px;display:block}
+.typing{display:flex;gap:4px;align-items:center;padding:8px 12px}
+.tdot{width:5px;height:5px;border-radius:50%;background:var(--arc);animation:tdot 1.2s ease-in-out infinite}
+.tdot:nth-child(2){animation-delay:.2s}.tdot:nth-child(3){animation-delay:.4s}
+@keyframes tdot{0%,60%,100%{opacity:.2;transform:scale(.8)}30%{opacity:1;transform:scale(1)}}
+
+/* INPUT */
+.ibar{border-top:1px solid var(--b1);padding:7px 12px;display:flex;gap:5px;align-items:flex-end;background:rgba(1,7,13,.98);flex-shrink:0}
+.inp{flex:1;background:rgba(0,200,255,.03);border:1px solid var(--b1);border-radius:3px;padding:7px 11px;color:var(--tx);font-family:'Share Tech Mono',monospace;font-size:11px;outline:none;resize:none;min-height:32px;max-height:80px;transition:border-color .2s;line-height:1.4}
+.inp::placeholder{color:rgba(150,210,240,.2)}
+.inp:focus{border-color:var(--b2)}
+.ibtn{height:32px;padding:0 10px;background:transparent;border:1px solid var(--b1);border-radius:3px;color:var(--mu);font-family:'Share Tech Mono',monospace;font-size:8px;cursor:pointer;letter-spacing:.06em;transition:all .14s;white-space:nowrap;display:flex;align-items:center;gap:4px;flex-shrink:0}
+.ibtn:hover{border-color:var(--arc);color:var(--arc)}
+.ibtn.primary{border-color:var(--b2);color:var(--arc)}
+.ibtn.primary:hover{background:rgba(0,200,255,.08)}
+.ibtn.mic.hot{border-color:var(--grn);color:var(--grn);background:rgba(0,255,170,.05);animation:mh 1s ease-in-out infinite}
+@keyframes mh{0%,100%{box-shadow:0 0 0 0 rgba(0,255,170,.28)}50%{box-shadow:0 0 0 4px rgba(0,255,170,0)}}
+.ibtn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.5}
+
+/* RIGHT PANEL */
+.rp{border-left:1px solid var(--b1);background:rgba(3,9,18,.88);display:flex;flex-direction:column;overflow:hidden}
+
+/* ORB */
+.orb-sec{padding:12px 12px 10px;border-bottom:1px solid var(--b1);display:flex;flex-direction:column;align-items:center;gap:7px;flex-shrink:0}
+.orb{width:60px;height:60px;border-radius:50%;position:relative;cursor:pointer}
+.or{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(0,200,255,.13);animation:osp 4s linear infinite}
+.or:nth-child(2){inset:-6px;border-color:rgba(0,200,255,.06);animation-duration:7s;animation-direction:reverse}
+.or:nth-child(3){inset:-13px;border-color:rgba(0,200,255,.03);animation-duration:12s}
+@keyframes osp{to{transform:rotate(360deg)}}
+.oc{position:absolute;inset:6px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(0,200,255,.18),rgba(0,38,78,.98));border:1px solid rgba(0,200,255,.25);display:flex;align-items:center;justify-content:center;transition:all .3s}
+.oc.listen{background:radial-gradient(circle at 35% 35%,rgba(0,255,170,.22),rgba(0,52,26,.98));border-color:rgba(0,255,170,.42);animation:lp 1s ease-in-out infinite}
+.oc.think{background:radial-gradient(circle at 35% 35%,rgba(155,109,255,.22),rgba(26,0,62,.98));border-color:rgba(155,109,255,.42);animation:tp .55s ease-in-out infinite}
+.oc.speak{background:radial-gradient(circle at 35% 35%,rgba(255,216,77,.22),rgba(62,36,0,.98));border-color:rgba(255,216,77,.42)}
+@keyframes lp{0%,100%{box-shadow:0 0 12px rgba(0,255,170,.18)}50%{box-shadow:0 0 30px rgba(0,255,170,.45)}}
+@keyframes tp{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.ol{font-family:'Orbitron',sans-serif;font-size:.95rem;font-weight:900;color:#fff;text-shadow:0 0 8px var(--arc)}
+.ostat{font-family:'Share Tech Mono',monospace;font-size:7.5px;color:var(--mu);text-align:center;letter-spacing:.1em}
+.owave{display:flex;align-items:center;justify-content:center;gap:2px;height:14px}
+.ow{width:2px;border-radius:99px;background:var(--arc);animation:owv 1.4s ease-in-out infinite}
+@keyframes owv{0%,100%{height:2px;opacity:.12}50%{height:11px;opacity:.72}}
+.owave.idle .ow{animation:none;height:2px;opacity:.1}
+.owave.speak .ow{background:var(--gld)}
+.owave.listen .ow{background:var(--grn)}
+
+/* SYS STRIP */
+.sys-strip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--b1);border-bottom:1px solid var(--b1);flex-shrink:0}
+.ss{background:var(--p2);padding:6px 10px;display:flex;flex-direction:column;gap:1px}
+.ss-k{font-family:'Share Tech Mono',monospace;font-size:6.5px;color:var(--mu2);letter-spacing:.08em;text-transform:uppercase}
+.ss-v{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--arc);font-weight:500}
+.ss-v.g{color:var(--grn)}.ss-v.y{color:var(--gld)}.ss-v.r{color:var(--red)}
+
+/* SEARCH BAR */
+.cap-search{padding:8px 10px;border-bottom:1px solid var(--b1);flex-shrink:0}
+.csearch{width:100%;background:rgba(0,200,255,.03);border:1px solid var(--b1);border-radius:3px;padding:5px 9px;color:var(--tx);font-family:'Share Tech Mono',monospace;font-size:10px;outline:none;transition:border-color .15s}
+.csearch::placeholder{color:var(--mu2)}
+.csearch:focus{border-color:var(--b2)}
+
+/* CAPS */
+.cap-panel{flex:1;overflow-y:auto}
+.cap-panel::-webkit-scrollbar{width:2px}
+.cap-panel::-webkit-scrollbar-thumb{background:rgba(0,200,255,.1)}
+.cap-section{border-bottom:1px solid rgba(0,200,255,.05)}
+.cap-hdr{padding:8px 10px;display:flex;align-items:center;gap:7px;cursor:pointer;transition:background .14s;user-select:none}
+.cap-hdr:hover{background:rgba(0,200,255,.04)}
+.cap-ico{width:18px;height:18px;border-radius:2px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cap-ico svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.cap-ttl{font-family:'Share Tech Mono',monospace;font-size:8.5px;color:var(--tx);letter-spacing:.06em;flex:1}
+.cap-cnt{font-family:'Share Tech Mono',monospace;font-size:7px;color:var(--mu);background:rgba(0,200,255,.05);border:1px solid var(--b1);border-radius:99px;padding:1px 5px}
+.cap-arr{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--mu);transition:transform .2s}
+.cap-section.open .cap-arr{transform:rotate(90deg)}
+.cap-body{display:none;padding:2px 8px 8px}
+.cap-section.open .cap-body{display:flex;flex-direction:column;gap:1px}
+.cap-item{display:flex;align-items:center;gap:7px;padding:4px 5px;border-radius:2px;cursor:pointer;transition:all .12s;border:1px solid transparent}
+.cap-item:hover{background:rgba(0,200,255,.05);border-color:var(--b1)}
+.cap-dot{width:4px;height:4px;border-radius:50%;flex-shrink:0}
+.cap-name{font-family:'Rajdhani',sans-serif;font-size:11.5px;color:var(--mu);font-weight:500;flex:1}
+.cap-item:hover .cap-name{color:var(--tx)}
+.cap-st{font-family:'Share Tech Mono',monospace;font-size:6.5px;letter-spacing:.04em}
+.cap-item.hidden{display:none}
+
+/* STATUS BAR */
+.sb{height:20px;border-top:1px solid var(--b1);background:rgba(1,6,13,.99);display:flex;align-items:center;padding:0 12px;gap:14px;font-family:'Share Tech Mono',monospace;font-size:7.5px;color:rgba(150,210,240,.22);flex-shrink:0;position:relative;z-index:10}
+.sb b{color:var(--arc)}
+
+/* VOICE BANNER */
+.vbanner{position:absolute;top:46px;left:50%;transform:translateX(-50%);background:rgba(0,52,26,.98);border:1px solid rgba(0,255,170,.28);border-radius:3px;padding:7px 16px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--grn);z-index:400;display:none;align-items:center;gap:12px;letter-spacing:.06em;white-space:nowrap}
+.vbanner.show{display:flex}
+.vw{width:2px;border-radius:99px;background:var(--grn);animation:owv 1.2s ease-in-out infinite;display:inline-block;margin:0 1px}
+
+/* MEMORY PANEL */
+.mem-panel{position:absolute;top:46px;right:280px;width:220px;background:rgba(4,12,22,.98);border:1px solid var(--b2);border-radius:4px;padding:10px;z-index:300;display:none;box-shadow:0 0 20px rgba(0,200,255,.06)}
+.mem-panel.show{display:block}
+.mem-title{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--arc);letter-spacing:.1em;margin-bottom:8px}
+.mem-item{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--mu);padding:4px 0;border-bottom:1px solid rgba(0,200,255,.05);line-height:1.5}
+.mem-item:last-child{border:none}
+.mem-item b{color:var(--tx)}
+
+/* TOAST */
+.toast{position:absolute;bottom:28px;left:50%;transform:translateX(-50%) translateY(12px);background:rgba(4,12,22,.99);border:1px solid var(--b2);border-radius:3px;padding:6px 16px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--arc);z-index:999;opacity:0;transition:all .28s;pointer-events:none;white-space:nowrap;letter-spacing:.06em}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:800px){.main{grid-template-columns:1fr}.rail,.rp{display:none}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+<canvas id="bgc"></canvas>
+<div class="scanlines"></div>
+
+<!-- VOICE BANNER -->
+<div class="vbanner" id="vbanner">
+  <span class="vw" style="animation-delay:.00s"></span><span class="vw" style="animation-delay:.10s"></span>
+  <span class="vw" style="animation-delay:.20s"></span><span class="vw" style="animation-delay:.05s"></span>
+  <span id="vtxt">Listening...</span>
+  <button onclick="cancelVoice()" style="background:transparent;border:1px solid rgba(255,64,96,.28);border-radius:2px;padding:2px 8px;font-family:'Share Tech Mono',monospace;font-size:8px;color:#ff4060;cursor:pointer">CANCEL</button>
+</div>
+
+<!-- MEMORY PANEL -->
+<div class="mem-panel" id="mem-panel">
+  <div class="mem-title">// SESSION MEMORY</div>
+  <div id="mem-list"><div class="mem-item" style="color:var(--mu2)">No memories yet</div></div>
+</div>
+
+<!-- TITLEBAR -->
+<div class="tb">
+  <div class="tb-brand">
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="6" stroke="#00c8ff" stroke-opacity=".28"/><text x="6.5" y="9.8" font-size="7.5" text-anchor="middle" fill="#00c8ff" font-family="monospace" font-weight="900">D</text></svg>
+    <div class="tb-logo">D.E.V.<em>E</em></div>
+  </div>
+  <div class="tb-sep"></div>
+  <div class="tb-stats">
+    <div class="tbs g">SYSTEM <b>ONLINE</b></div>
+    <div class="tbs r">INTERNET <b>NONE</b></div>
+    <div class="tbs">AI <b>INTERNAL</b></div>
+    <div class="tbs">MSGS <b id="t-msgs">0</b></div>
+    <div class="tbs">MEMORY <b id="t-mem">0</b></div>
+    <div class="tbs">UPTIME <b id="t-uptime">00:00:00</b></div>
+    <div class="tbs y">CAPS <b>90+</b></div>
+  </div>
+  <div class="pdot" style="margin-left:auto;margin-right:6px"></div>
+  <div class="wbtns">
+    <div class="wb" title="Minimize">─</div>
+    <div class="wb" title="Maximize">□</div>
+    <div class="wb cls" title="Hide to tray">✕</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- RAIL -->
+<div class="rail">
+  <div class="ri on" onclick="railClick(this);qsend('Hello D.E.V.E, introduce yourself')" title="Chat"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>CHAT</span></div>
+  <div class="ri" onclick="railClick(this);qsend('Write me complete production-ready code. What should I build?')" title="Code"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg><span>CODE</span></div>
+  <div class="ri" onclick="railClick(this);qsend('Help me design something — brand, UI/UX, or visual strategy.')" title="Design"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span>DESIGN</span></div>
+  <div class="ri" onclick="railClick(this);qsend('Give me a detailed financial plan and investment strategy.')" title="Finance"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span>FIN</span></div>
+  <div class="ri" onclick="railClick(this);qsend('Help me write something — email, essay, script, or content.')" title="Write"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span>WRITE</span></div>
+  <div class="ri" onclick="railClick(this);qsend('Research a topic and give me a comprehensive structured briefing.')" title="Research"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span>SEARCH</span></div>
+  <div class="ri" onclick="railClick(this);qsend('Create a complete business plan or strategic roadmap.')" title="Plan"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>PLAN</span></div>
+  <div class="rsep"></div>
+  <div class="ri" onclick="railClick(this);qsend('Teach me something deeply — explain with examples and analogies.')" title="Learn"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>LEARN</span></div>
+  <div class="ri" onclick="railClick(this);qsend('Create a fitness and nutrition plan tailored to my goals.')" title="Health"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span>HEALTH</span></div>
+  <div class="ri" onclick="railClick(this);qsend('Help me automate a workflow or repetitive task.')" title="Auto"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span>AUTO</span></div>
+  <div class="ri" onclick="railClick(this);startVoice()" title="Voice"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg><span>VOICE</span></div>
+  <div class="ri" onclick="railClick(this);toggleMem()" title="Memory"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg><span>MEM</span></div>
+</div>
+
+<!-- CENTER -->
+<div class="center">
+  <div class="feed" id="feed">
+    <div class="sysmsg">// <b>D.E.V.E FULL AI — ONLINE</b> · ZERO INTERNET · ZERO EXTERNAL AI · 90+ CAPABILITIES ACTIVE //</div>
+  </div>
+  <div class="ibar">
+    <button class="ibtn mic" id="micbtn" onclick="startVoice()" title="Voice input">
+      <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      MIC
+    </button>
+    <textarea class="inp" id="inp" rows="1" placeholder="Ask D.E.V.E anything... or click a capability →" onkeydown="kdown(event)" oninput="rsz(this)"></textarea>
+    <button class="ibtn" onclick="clearChat()" title="Clear">
+      <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+    </button>
+    <button class="ibtn primary" onclick="send()">SEND ▶</button>
+  </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="rp">
+  <!-- ORB -->
+  <div class="orb-sec">
+    <div class="orb" onclick="startVoice()" title="Click to speak">
+      <div class="or"></div><div class="or"></div><div class="or"></div>
+      <div class="oc" id="oc"><div class="ol">D</div></div>
+    </div>
+    <div class="ostat" id="ostat">CLICK TO SPEAK</div>
+    <div class="owave idle" id="owave">
+      <div class="ow" style="animation-delay:.00s"></div><div class="ow" style="animation-delay:.10s"></div>
+      <div class="ow" style="animation-delay:.20s"></div><div class="ow" style="animation-delay:.05s"></div>
+      <div class="ow" style="animation-delay:.15s"></div><div class="ow" style="animation-delay:.25s"></div>
+      <div class="ow" style="animation-delay:.08s"></div><div class="ow" style="animation-delay:.18s"></div>
+    </div>
+  </div>
+
+  <!-- SYS STRIP -->
+  <div class="sys-strip">
+    <div class="ss"><div class="ss-k">AI ENGINE</div><div class="ss-v g">INTERNAL</div></div>
+    <div class="ss"><div class="ss-k">INTERNET</div><div class="ss-v r">NONE</div></div>
+    <div class="ss"><div class="ss-k">VOICE</div><div class="ss-v" id="s-voice">READY</div></div>
+    <div class="ss"><div class="ss-k">MEMORY</div><div class="ss-v" id="s-mem">0 TURNS</div></div>
+    <div class="ss"><div class="ss-k">BG TASKS</div><div class="ss-v y" id="s-bg">0</div></div>
+    <div class="ss"><div class="ss-k">UPTIME</div><div class="ss-v" id="s-up2">00:00</div></div>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="cap-search">
+    <input class="csearch" type="text" placeholder="Search 90+ capabilities..." oninput="filterCaps(this.value)" id="cap-search"/>
+  </div>
+
+  <!-- CAPS PANEL -->
+  <div class="cap-panel" id="cap-panel"></div>
+</div>
+
+</div><!-- /main -->
+
+<!-- STATUS BAR -->
+<div class="sb">
+  <div class="pdot"></div>
+  <span>ENGINE <b>INTERNAL</b></span>
+  <span>UPTIME <b id="sb-uptime">00:00:00</b></span>
+  <span>BG <b id="sb-bg">0</b></span>
+  <span>MSGS <b id="sb-msgs">0</b></span>
+  <span style="flex:1"></span>
+  <span style="color:rgba(0,200,255,.12)">D.E.V.E v1.0 FULL AI — 100% INDEPENDENT — ZERO EXTERNAL AI — ZERO INTERNET</span>
+</div>
+
+<div class="toast" id="toast"></div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════
+//   D.E.V.E FULL AI — COMPLETE INTELLIGENCE ENGINE
+//   Digital Engineered Virtual Entity v1.0
+//   Zero internet · Zero external AI · 100% local
+// ════════════════════════════════════════════════════
+
+// ── CAPABILITY REGISTRY ──────────────────────────────
+const CAPS=[
+  {id:'conv',label:'Conversation & Voice',color:'#00c8ff',icon:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',items:[
+    {n:'Natural language conversation',s:'ACTIVE',p:'Let\'s have a natural, open-ended conversation. What\'s on your mind?'},
+    {n:'Voice assistant',s:'ACTIVE',p:'voice_activate',a:'voice'},
+    {n:'Text chat',s:'ACTIVE',p:'I\'m ready for text chat. Type any message and I\'ll respond instantly.'},
+    {n:'Speech-to-text',s:'ACTIVE',p:'voice_activate',a:'voice'},
+    {n:'Text-to-speech',s:'ACTIVE',p:'Speak any response aloud — TTS is active. Say: "Read this to me" before any message.'},
+    {n:'Real-time translation',s:'ACTIVE',p:'Translate the following to [language]: '},
+    {n:'Multi-language support',s:'ACTIVE',p:'I support English, Spanish, French, German, Chinese, Japanese, Arabic, Portuguese, Russian, and more. Which language shall we use?'},
+    {n:'Emotion-aware interaction',s:'ACTIVE',p:'How are you feeling today? I\'ll adapt my tone to match your emotional state.'},
+    {n:'Custom AI personalities',s:'ACTIVE',p:'Set my personality style: JARVIS (formal), Casual (friendly), Technical (precise), Motivator (energetic). Which do you prefer?'},
+    {n:'Virtual companion mode',s:'ACTIVE',p:'Activate companion mode — I\'ll check in, support your focus, and keep you company throughout your session.'},
+    {n:'Voice wake activation',s:'PARTIAL',p:'Wake word detection requires Chrome browser. Say "Hey DEVE" or click the MIC button.'},
+    {n:'Digital avatar support',s:'COMING',p:'Digital avatar integration is planned for D.E.V.E v2.0 with holographic display support.'},
+  ]},
+  {id:'vision',label:'Vision & Media Analysis',color:'#9b6dff',icon:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',items:[
+    {n:'Image recognition',s:'ACTIVE',p:'Describe an image to me and I\'ll analyze it — objects, scenes, text, patterns, and context.'},
+    {n:'OCR text scanning',s:'ACTIVE',p:'Paste text from an image or document and I\'ll clean, format, and process it for you.'},
+    {n:'Screen understanding',s:'ACTIVE',p:'Describe what\'s on your screen and I\'ll help you understand, troubleshoot, or act on it.'},
+    {n:'Video understanding',s:'ACTIVE',p:'Paste a video transcript or describe a video — I\'ll summarize, extract insights, and generate timestamps.'},
+    {n:'QR/barcode scanning',s:'ACTIVE',p:'Share QR code data or barcode information and I\'ll decode and explain it.'},
+    {n:'Camera assistant',s:'ACTIVE',p:'Describe what your camera sees — I\'ll identify, explain, translate, or provide context.'},
+    {n:'File analysis',s:'ACTIVE',p:'Paste the contents of any file — document, code, CSV, JSON — and I\'ll analyze it completely.'},
+    {n:'Document understanding',s:'ACTIVE',p:'Share any document text and I\'ll summarize, extract key points, and answer questions about it.'},
+    {n:'Face recognition',s:'PLANNED',p:'Face recognition with privacy controls is planned for D.E.V.E v2.0.'},
+  ]},
+  {id:'creative',label:'Creative Generation',color:'#ff6b6b',icon:'<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>',items:[
+    {n:'Story writing',s:'ACTIVE',p:'Write me a story about: '},
+    {n:'Image generation prompts',s:'ACTIVE',p:'Generate a detailed image prompt for: [describe what you want]. I\'ll create the perfect prompt for any AI image tool.'},
+    {n:'Music generation',s:'ACTIVE',p:'Compose original song lyrics, chord progressions, or a full music concept. What genre and mood?'},
+    {n:'Video scripts',s:'ACTIVE',p:'Write a complete video script for: [topic]. Include hook, sections, and call to action.'},
+    {n:'UI/UX generation',s:'ACTIVE',p:'Design a UI for: [describe the app or feature]. I\'ll create wireframe concepts, component structure, and design system.'},
+    {n:'Presentation creation',s:'ACTIVE',p:'Create a full presentation on: [topic]. How many slides and what\'s the audience?'},
+    {n:'Document generation',s:'ACTIVE',p:'Generate a professional document — report, proposal, brief, or contract template. What do you need?'},
+    {n:'Resume creation',s:'ACTIVE',p:'Create a professional resume. Share your experience, education, skills, and target role.'},
+    {n:'Poetry & creative writing',s:'ACTIVE',p:'Write a poem, haiku, or creative piece about: '},
+    {n:'Game design documents',s:'ACTIVE',p:'Create a game design document for: [game concept]. Include mechanics, story, and monetization.'},
+    {n:'Social media content',s:'ACTIVE',p:'Create viral social media content for: [platform and topic]. What\'s your brand voice?'},
+    {n:'Marketing copy',s:'ACTIVE',p:'Write compelling marketing copy for: [product or service]. Target audience and tone?'},
+  ]},
+  {id:'productivity',label:'Productivity & Organization',color:'#00ffaa',icon:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',items:[
+    {n:'Task automation',s:'ACTIVE',p:'Automate this task: [describe it]. I\'ll write the complete script in Python or PowerShell.'},
+    {n:'Smart reminders',s:'ACTIVE',p:'Create a smart reminder system for: [your goals and schedule].'},
+    {n:'Calendar management',s:'ACTIVE',p:'Help me organize my schedule. Share your commitments and I\'ll create an optimized calendar plan.'},
+    {n:'Note-taking',s:'ACTIVE',p:'Take structured notes — dictate or type and I\'ll organize them with headers, bullets, and action items.'},
+    {n:'Meeting summaries',s:'ACTIVE',p:'Summarize this meeting: [paste transcript or notes]. I\'ll create a clean summary with decisions and action items.'},
+    {n:'Email drafting',s:'ACTIVE',p:'Draft a professional email to: [recipient] about: [topic].'},
+    {n:'Habit tracking',s:'ACTIVE',p:'Build me a habit tracking system for: [habits]. Include streaks, triggers, and accountability structure.'},
+    {n:'Goal planning',s:'ACTIVE',p:'Help me plan this goal: [your goal]. I\'ll create milestones, weekly targets, and daily actions.'},
+    {n:'Time management',s:'ACTIVE',p:'Optimize my time. Share your typical week and I\'ll create a time-blocking schedule.'},
+    {n:'Productivity dashboard',s:'ACTIVE',p:'Design a productivity dashboard for: [your role/workflow]. What metrics matter most?'},
+    {n:'Project management',s:'ACTIVE',p:'Plan this project: [describe it]. I\'ll create a full project plan with tasks, timeline, and dependencies.'},
+    {n:'Interview preparation',s:'ACTIVE',p:'Prepare me for an interview at: [company] for: [role]. Run a full mock interview session.'},
+  ]},
+  {id:'research',label:'Research & Knowledge',color:'#ffd84d',icon:'<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',items:[
+    {n:'Research assistance',s:'ACTIVE',p:'Research this topic for me: [topic]. Give me a comprehensive structured briefing with key insights.'},
+    {n:'Data analysis',s:'ACTIVE',p:'Analyze this data: [paste data]. I\'ll find patterns, insights, and recommendations.'},
+    {n:'Citation support',s:'ACTIVE',p:'Format citations for: [source]. Which style do you need — APA, MLA, Chicago, or IEEE?'},
+    {n:'Spreadsheet analysis',s:'ACTIVE',p:'Analyze this spreadsheet data: [paste data]. I\'ll create formulas, pivot analysis, and insights.'},
+    {n:'Data visualization',s:'ACTIVE',p:'Visualize this data: [describe or paste data]. I\'ll design the charts and dashboard layout.'},
+    {n:'Knowledge synthesis',s:'ACTIVE',p:'Synthesize everything I need to know about: [topic] from multiple angles and frameworks.'},
+    {n:'Fact checking',s:'ACTIVE',p:'Fact-check this claim: [paste claim]. I\'ll analyze it against my knowledge base.'},
+    {n:'Simulation & forecasting',s:'ACTIVE',p:'Simulate this scenario: [describe it]. I\'ll model outcomes, variables, and probability ranges.'},
+    {n:'Comparative analysis',s:'ACTIVE',p:'Compare: [option A] vs [option B]. I\'ll create a full structured comparison across all dimensions.'},
+    {n:'Long-term memory',s:'ACTIVE',p:'I maintain full conversation context. Tell me anything to remember: '},
+    {n:'Searchable memory system',s:'ACTIVE',p:'Ask me anything about our conversation — I remember everything from this session.'},
+  ]},
+  {id:'code',label:'Coding & Development',color:'#00c8ff',icon:'<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',items:[
+    {n:'Full-stack development',s:'ACTIVE',p:'Build a complete full-stack application: [describe it]. Include frontend, backend, database, and auth.'},
+    {n:'API development',s:'ACTIVE',p:'Build a complete REST API with authentication for: [use case].'},
+    {n:'Debugging help',s:'ACTIVE',p:'Debug this code: [paste your code]. I\'ll identify every issue and explain each fix in detail.'},
+    {n:'Code review',s:'ACTIVE',p:'Review this code: [paste code]. I\'ll analyze quality, performance, security, and best practices.'},
+    {n:'Algorithm design',s:'ACTIVE',p:'Design an algorithm for: [problem]. Include complexity analysis and optimizations.'},
+    {n:'Database design',s:'ACTIVE',p:'Design a database schema for: [application]. I\'ll create the full ERD with relationships and indexes.'},
+    {n:'Browser automation',s:'ACTIVE',p:'Write browser automation for: [task]. Using Playwright, Puppeteer, or Selenium — which do you prefer?'},
+    {n:'App control scripts',s:'ACTIVE',p:'Write automation to control: [app/software] on Windows. I\'ll use PowerShell or Python win32.'},
+    {n:'AI agent architecture',s:'ACTIVE',p:'Design an AI agent system for: [goal]. I\'ll architect the full multi-agent framework.'},
+    {n:'API integration',s:'ACTIVE',p:'Integrate this API: [API name or paste docs]. I\'ll write the complete integration code.'},
+    {n:'DevOps & deployment',s:'ACTIVE',p:'Create a deployment pipeline for: [project]. Docker, CI/CD, or cloud platform?'},
+    {n:'Mobile app development',s:'ACTIVE',p:'Build a mobile app for: [concept]. React Native, Flutter, or Swift/Kotlin?'},
+    {n:'Plugin/extension development',s:'ACTIVE',p:'Build a plugin or extension for: [app or browser]. I\'ll write the complete code.'},
+    {n:'Cybersecurity audit',s:'ACTIVE',p:'Audit this code or system for security vulnerabilities: [paste code or describe system].'},
+  ]},
+  {id:'intelligence',label:'Intelligence & Awareness',color:'#9b6dff',icon:'<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>',items:[
+    {n:'Context awareness',s:'ACTIVE',p:'I maintain full awareness of our entire conversation and adapt every response accordingly.'},
+    {n:'Personalized responses',s:'ACTIVE',p:'The more we talk, the more I learn your preferences. Tell me about yourself to personalize my responses.'},
+    {n:'Smart recommendations',s:'ACTIVE',p:'Tell me what you\'re working on and I\'ll proactively recommend the best tools, approaches, and resources.'},
+    {n:'Predictive assistance',s:'ACTIVE',p:'Describe your current project and I\'ll predict what you\'ll need next and prepare it in advance.'},
+    {n:'Autonomous decision-making',s:'ACTIVE',p:'Give me a complex goal and I\'ll autonomously plan the approach, break it into steps, and execute each one.'},
+    {n:'Business analytics',s:'ACTIVE',p:'Analyze this business data: [paste metrics]. I\'ll provide deep insights, trends, and strategic recommendations.'},
+    {n:'Multi-agent systems',s:'ACTIVE',p:'Design a multi-agent system where multiple AI agents collaborate to solve: [complex task].'},
+    {n:'Workflow automation design',s:'ACTIVE',p:'Map and automate this workflow: [describe current process]. I\'ll optimize and write the automation.'},
+  ]},
+  {id:'lifestyle',label:'Lifestyle & Wellbeing',color:'#ff6b6b',icon:'<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>',items:[
+    {n:'Fitness coaching',s:'ACTIVE',p:'Be my personal fitness coach. My goal is: [goal]. Current fitness level: [level]. Available equipment: [equipment].'},
+    {n:'Nutrition planning',s:'ACTIVE',p:'Create a nutrition plan for: [goal]. Dietary restrictions: [restrictions]. Daily budget: [budget].'},
+    {n:'Health tracking support',s:'ACTIVE',p:'Help me track: [health metrics]. I\'ll build a tracking framework and interpretation guide.'},
+    {n:'Mental wellness support',s:'ACTIVE',p:'I want to work on: [mental wellness goal]. I\'ll create a structured mindfulness and habit plan.'},
+    {n:'Sleep optimization',s:'ACTIVE',p:'Help me optimize my sleep. Current schedule: [describe it]. Issues: [issues].'},
+    {n:'Travel planning',s:'ACTIVE',p:'Plan a trip to: [destination]. Duration: [days]. Budget: [budget]. Interests: [interests].'},
+    {n:'Shopping assistance',s:'ACTIVE',p:'Help me find the best option for: [item]. Budget: [budget]. Requirements: [requirements].'},
+    {n:'Social media management',s:'ACTIVE',p:'Manage my social presence on: [platform]. Brand: [describe it]. Goal: [goal].'},
+    {n:'Gaming assistant',s:'ACTIVE',p:'Help me with: [game]. I need: [strategy/walkthrough/build/lore]. Current challenge: [describe].'},
+    {n:'Learning/tutoring mode',s:'ACTIVE',p:'Teach me: [subject]. Current level: [beginner/intermediate/advanced]. Learning style: [visual/practice/theory].'},
+    {n:'Career coaching',s:'ACTIVE',p:'Coach me on my career. Current role: [role]. Goal: [career goal]. Timeline: [timeline].'},
+    {n:'Relationship advice',s:'ACTIVE',p:'I need advice about: [situation]. I\'ll provide thoughtful, balanced guidance.'},
+  ]},
+  {id:'integration',label:'System & Integration',color:'#00ffaa',icon:'<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',items:[
+    {n:'Smart home control',s:'ACTIVE',p:'Set up smart home automation for: [device/platform]. I\'ll write the control scripts and routines.'},
+    {n:'IoT integration',s:'ACTIVE',p:'Integrate IoT devices for: [use case]. I\'ll design the architecture and write the integration code.'},
+    {n:'Cloud storage integration',s:'ACTIVE',p:'Integrate cloud storage into my workflow. Platform: [Google Drive/OneDrive/Dropbox]. Use case: [describe].'},
+    {n:'API integration',s:'ACTIVE',p:'Build a complete API integration for: [service]. I\'ll write authentication, endpoints, and error handling.'},
+    {n:'Multi-device sync',s:'ACTIVE',p:'Design a sync system for my workflow across: [devices]. I\'ll architect the complete solution.'},
+    {n:'Offline mode',s:'ACTIVE',p:'D.E.V.E operates completely offline — zero internet required. All intelligence runs on your machine.'},
+    {n:'Security & encryption',s:'ACTIVE',p:'Implement security for: [system]. I\'ll write encryption, authentication, and security audit code.'},
+    {n:'Permission management',s:'ACTIVE',p:'Design a permission system for: [application]. I\'ll create the full RBAC architecture.'},
+    {n:'Payment integration',s:'ACTIVE',p:'Integrate payments for: [use case]. Stripe, PayPal, or another provider? I\'ll write the complete integration.'},
+    {n:'Customer support automation',s:'ACTIVE',p:'Build a customer support system for: [business]. I\'ll create response flows, FAQs, and escalation logic.'},
+    {n:'Team collaboration setup',s:'ACTIVE',p:'Design a team collaboration workflow for: [team type]. Tools, processes, and AI automation included.'},
+    {n:'Wearable integration',s:'ACTIVE',p:'Connect D.E.V.E to wearable data from: [device]. I\'ll write the integration and analysis pipeline.'},
+    {n:'Cross-platform support',s:'ACTIVE',p:'D.E.V.E runs on Windows, Mac, Linux, and any modern browser. No installation required for browser mode.'},
+    {n:'Smart notifications',s:'ACTIVE',p:'Design an intelligent notification system that filters and prioritizes what actually matters for: [workflow].'},
+  ]},
+];
+
+// ── KNOWLEDGE ENGINE ─────────────────────────────────
+const KB={
+  code:{
+    python_api:`from fastapi import FastAPI, HTTPException, Depends
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from datetime import datetime, timedelta
+from pydantic import BaseModel
+from typing import Optional
+import sqlite3, hashlib
+
+app = FastAPI(title="D.E.V.E API", version="1.0.0")
+SECRET_KEY = "deve-change-this-in-production"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE = 30
+REFRESH_TOKEN_EXPIRE = 7 * 24 * 60
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+
+class User(BaseModel):
+    username: str
+    email: str
+    
+class Token(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+
+def create_token(data: dict, minutes: int) -> str:
+    payload = data.copy()
+    payload["exp"] = datetime.utcnow() + timedelta(minutes=minutes)
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+def verify_password(plain: str, hashed: str) -> bool:
+    return pwd_context.verify(plain, hashed)
+
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if not username:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        return {"username": username, "exp": payload.get("exp")}
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Token expired or invalid")
+
+@app.post("/auth/login", response_model=Token)
+async def login(form: OAuth2PasswordRequestForm = Depends()):
+    # Replace with your database lookup
+    # user = db.get_user(form.username)
+    # if not user or not verify_password(form.password, user.password_hash):
+    #     raise HTTPException(401, "Invalid credentials")
+    if form.username != "admin":  # Demo check
+        raise HTTPException(401, "Invalid credentials")
+    return Token(
+        access_token=create_token({"sub": form.username, "type": "access"}, ACCESS_TOKEN_EXPIRE),
+        refresh_token=create_token({"sub": form.username, "type": "refresh"}, REFRESH_TOKEN_EXPIRE)
+    )
+
+@app.post("/auth/refresh")
+async def refresh_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("type") != "refresh":
+            raise HTTPException(401, "Invalid refresh token")
+        username = payload.get("sub")
+        return {"access_token": create_token({"sub": username, "type": "access"}, ACCESS_TOKEN_EXPIRE)}
+    except JWTError:
+        raise HTTPException(401, "Refresh token expired")
+
+@app.get("/users/me")
+async def get_me(current_user: dict = Depends(get_current_user)):
+    return {"username": current_user["username"], "status": "authenticated"}
+
+@app.get("/health")
+async def health():
+    return {"system": "D.E.V.E", "status": "operational", "version": "1.0.0"}`,
+
+    react_app:`import React, { useState, useEffect, useCallback, useContext, createContext } from 'react';
+
+// ── CONTEXT ──
+interface AppState { user: User | null; theme: 'dark' | 'light'; loading: boolean; }
+interface User { id: string; name: string; email: string; role: string; }
+const AppContext = createContext<{state: AppState; dispatch: React.Dispatch<Action>} | null>(null);
+
+type Action =
+  | { type: 'SET_USER'; payload: User | null }
+  | { type: 'SET_THEME'; payload: 'dark' | 'light' }
+  | { type: 'SET_LOADING'; payload: boolean };
+
+function reducer(state: AppState, action: Action): AppState {
+  switch (action.type) {
+    case 'SET_USER': return { ...state, user: action.payload };
+    case 'SET_THEME': return { ...state, theme: action.payload };
+    case 'SET_LOADING': return { ...state, loading: action.payload };
+    default: return state;
+  }
+}
+
+// ── CUSTOM HOOKS ──
+function useApp() {
+  const ctx = useContext(AppContext);
+  if (!ctx) throw new Error('useApp must be inside AppProvider');
+  return ctx;
+}
+
+function useLocalStorage<T>(key: string, init: T): [T, (v: T) => void] {
+  const [value, setValue] = useState<T>(() => {
+    try { return JSON.parse(localStorage.getItem(key) || '') ?? init; }
+    catch { return init; }
+  });
+  const set = useCallback((v: T) => {
+    setValue(v);
+    localStorage.setItem(key, JSON.stringify(v));
+  }, [key]);
+  return [value, set];
+}
+
+// ── API SERVICE ──
+class APIService {
+  private baseUrl: string;
+  private token: string | null = null;
+  
+  constructor(baseUrl: string) { this.baseUrl = baseUrl; }
+  
+  setToken(token: string) { this.token = token; }
+  
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (this.token) headers['Authorization'] = \`Bearer \${this.token}\`;
+    
+    const res = await fetch(\`\${this.baseUrl}\${endpoint}\`, { ...options, headers });
+    if (!res.ok) throw new Error(\`API Error: \${res.status} \${res.statusText}\`);
+    return res.json();
+  }
+  
+  async get<T>(endpoint: string): Promise<T> { return this.request<T>(endpoint); }
+  async post<T>(endpoint: string, data: unknown): Promise<T> {
+    return this.request<T>(endpoint, { method: 'POST', body: JSON.stringify(data) });
+  }
+}
+
+const api = new APIService(process.env.REACT_APP_API_URL || 'http://localhost:3000');
+
+// ── COMPONENTS ──
+const Button: React.FC<{ onClick?: () => void; disabled?: boolean; variant?: 'primary' | 'secondary'; children: React.ReactNode }> = 
+  ({ onClick, disabled, variant = 'primary', children }) => (
+  <button onClick={onClick} disabled={disabled}
+    className={\`px-4 py-2 rounded-lg font-medium transition-all \${
+      variant === 'primary' 
+        ? 'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50' 
+        : 'border border-gray-300 hover:bg-gray-50 disabled:opacity-50'
+    }\`}>
+    {children}
+  </button>
+);
+
+const Input: React.FC<{ label: string; value: string; onChange: (v: string) => void; type?: string; error?: string }> =
+  ({ label, value, onChange, type = 'text', error }) => (
+  <div className="flex flex-col gap-1">
+    <label className="text-sm font-medium text-gray-700">{label}</label>
+    <input type={type} value={value} onChange={e => onChange(e.target.value)}
+      className={\`border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 \${error ? 'border-red-500' : 'border-gray-300'}\`}/>
+    {error && <span className="text-red-500 text-xs">{error}</span>}
+  </div>
+);
+
+// ── MAIN APP ──
+export default function App() {
+  const [state, dispatch] = React.useReducer(reducer, { user: null, theme: 'dark', loading: false });
+  const [token, setToken] = useLocalStorage<string | null>('auth_token', null);
+  
+  useEffect(() => {
+    if (token) {
+      api.setToken(token);
+      api.get<User>('/users/me')
+        .then(user => dispatch({ type: 'SET_USER', payload: user }))
+        .catch(() => { setToken(null); });
+    }
+  }, []);
+  
+  return (
+    <AppContext.Provider value={{ state, dispatch }}>
+      <div className={\`min-h-screen \${state.theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}\`}>
+        {state.user ? <Dashboard /> : <LoginForm onLogin={setToken} />}
+      </div>
+    </AppContext.Provider>
+  );
+}
+
+function LoginForm({ onLogin }: { onLogin: (token: string) => void }) {
+  const { dispatch } = useApp();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true); setError('');
+    try {
+      const form = new FormData();
+      form.append('username', username);
+      form.append('password', password);
+      const { access_token } = await fetch('/auth/login', { method: 'POST', body: form }).then(r => r.json());
+      api.setToken(access_token);
+      onLogin(access_token);
+    } catch { setError('Invalid credentials'); }
+    finally { setLoading(false); }
+  };
+  
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg w-80 space-y-4">
+        <h1 className="text-2xl font-bold text-center">D.E.V.E Login</h1>
+        <Input label="Username" value={username} onChange={setUsername} />
+        <Input label="Password" value={password} onChange={setPassword} type="password" error={error} />
+        <Button disabled={loading}>{loading ? 'Logging in...' : 'Login'}</Button>
+      </form>
+    </div>
+  );
+}
+
+function Dashboard() {
+  const { state, dispatch } = useApp();
+  return (
+    <div className="p-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Welcome, {state.user?.name}</h1>
+        <Button variant="secondary" onClick={() => dispatch({ type: 'SET_USER', payload: null })}>Logout</Button>
+      </div>
+      <div className="grid grid-cols-3 gap-6">
+        {['Projects', 'Analytics', 'Settings'].map(card => (
+          <div key={card} className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+            <h3 className="text-lg font-semibold">{card}</h3>
+            <p className="text-gray-500 text-sm mt-1">Manage your {card.toLowerCase()}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}`,
+
+    python_ml:`import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score
+from sklearn.pipeline import Pipeline
+import matplotlib.pyplot as plt
+import seaborn as sns
+import joblib
+import warnings
+warnings.filterwarnings('ignore')
+
+class DEVEMLPipeline:
+    """Complete ML pipeline with preprocessing, training, evaluation, and deployment"""
+    
+    def __init__(self, task: str = 'classification'):
+        self.task = task
+        self.best_model = None
+        self.pipeline = None
+        self.feature_names = None
+        self.label_encoder = LabelEncoder()
+        self.results = {}
+    
+    def load_and_explore(self, filepath: str) -> pd.DataFrame:
+        """Load data and generate automatic EDA report"""
+        df = pd.read_csv(filepath)
+        print(f"Shape: {df.shape}")
+        print(f"Missing values:\\n{df.isnull().sum()[df.isnull().sum() > 0]}")
+        print(f"\\nDtypes:\\n{df.dtypes.value_counts()}")
+        print(f"\\nNumerical summary:\\n{df.describe()}")
+        return df
+    
+    def preprocess(self, df: pd.DataFrame, target: str) -> tuple:
+        """Automated preprocessing: handle missing values, encode categoricals"""
+        df = df.copy()
+        
+        # Handle missing values
+        for col in df.columns:
+            if df[col].dtype == 'object':
+                df[col].fillna(df[col].mode()[0], inplace=True)
+                df[col] = LabelEncoder().fit_transform(df[col])
+            else:
+                df[col].fillna(df[col].median(), inplace=True)
+        
+        X = df.drop(target, axis=1)
+        y = df[target]
+        
+        if y.dtype == 'object':
+            y = self.label_encoder.fit_transform(y)
+        
+        self.feature_names = X.columns.tolist()
+        return train_test_split(X, y, test_size=0.2, random_state=42, stratify=y if len(np.unique(y)) < 10 else None)
+    
+    def train_and_compare(self, X_train, X_test, y_train, y_test) -> dict:
+        """Train multiple models and select the best"""
+        models = {
+            'Random Forest': RandomForestClassifier(n_estimators=100, random_state=42),
+            'Gradient Boosting': GradientBoostingClassifier(n_estimators=100, random_state=42),
+            'Logistic Regression': LogisticRegression(max_iter=1000, random_state=42)
+        }
+        
+        for name, model in models.items():
+            pipeline = Pipeline([('scaler', StandardScaler()), ('model', model)])
+            cv_scores = cross_val_score(pipeline, X_train, y_train, cv=5, scoring='roc_auc')
+            pipeline.fit(X_train, y_train)
+            y_pred = pipeline.predict(X_test)
+            
+            self.results[name] = {
+                'cv_auc': cv_scores.mean(),
+                'cv_std': cv_scores.std(),
+                'test_auc': roc_auc_score(y_test, pipeline.predict_proba(X_test)[:, 1]) if hasattr(model, 'predict_proba') else 0,
+                'report': classification_report(y_test, y_pred),
+                'pipeline': pipeline
+            }
+            print(f"{name}: CV AUC = {cv_scores.mean():.4f} ± {cv_scores.std():.4f}")
+        
+        best_name = max(self.results, key=lambda k: self.results[k]['cv_auc'])
+        self.best_model = self.results[best_name]['pipeline']
+        self.pipeline = self.best_model
+        print(f"\\nBest model: {best_name}")
+        print(self.results[best_name]['report'])
+        return self.results
+    
+    def get_feature_importance(self) -> pd.Series:
+        """Extract and visualize feature importance"""
+        model = self.pipeline.named_steps['model']
+        if hasattr(model, 'feature_importances_'):
+            importance = pd.Series(model.feature_importances_, index=self.feature_names)
+            return importance.sort_values(ascending=False)
+        return pd.Series()
+    
+    def predict(self, X) -> np.ndarray:
+        """Make predictions with the best model"""
+        return self.pipeline.predict(X)
+    
+    def save(self, path: str = 'deve_model.pkl'):
+        """Save the trained pipeline"""
+        joblib.dump(self.pipeline, path)
+        print(f"Model saved to {path}")
+    
+    def load(self, path: str = 'deve_model.pkl'):
+        """Load a saved pipeline"""
+        self.pipeline = joblib.load(path)
+        return self
+
+# Usage:
+# ml = DEVEMLPipeline()
+# df = ml.load_and_explore('data.csv')
+# X_train, X_test, y_train, y_test = ml.preprocess(df, target='label')
+# results = ml.train_and_compare(X_train, X_test, y_train, y_test)
+# ml.save('deve_model.pkl')`,
+
+    automation:`import os, sys, json, shutil, schedule, time, smtplib, logging
+from pathlib import Path
+from datetime import datetime, timedelta
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from typing import Callable, List, Dict, Any
+import subprocess, threading
+
+logging.basicConfig(level=logging.INFO, format='[D.E.V.E] %(asctime)s - %(message)s')
+logger = logging.getLogger('deve')
+
+class DEVEAutomation:
+    """Complete automation engine with scheduling, file ops, notifications, and monitoring"""
+    
+    def __init__(self, config_path: str = 'deve_config.json'):
+        self.config = self._load_config(config_path)
+        self.tasks: List[Dict] = []
+        self.running = False
+        self._setup_directories()
+    
+    def _load_config(self, path: str) -> dict:
+        defaults = {
+            'watch_folders': [str(Path.home() / 'Downloads')],
+            'organize_dest': str(Path.home() / 'Organized'),
+            'backup_dest': str(Path.home() / 'Backups'),
+            'email': {'smtp': 'smtp.gmail.com', 'port': 587, 'user': '', 'pass': ''},
+            'schedule': {'organize': '*/2h', 'backup': 'daily@02:00', 'report': 'daily@08:00'}
+        }
+        try:
+            with open(path) as f: return {**defaults, **json.load(f)}
+        except: return defaults
+    
+    def _setup_directories(self):
+        Path(self.config['organize_dest']).mkdir(parents=True, exist_ok=True)
+        Path(self.config['backup_dest']).mkdir(parents=True, exist_ok=True)
+    
+    FILE_TYPES = {
+        'Images': ['.jpg','.jpeg','.png','.gif','.bmp','.webp','.svg','.heic'],
+        'Documents': ['.pdf','.doc','.docx','.txt','.xlsx','.pptx','.csv','.odt'],
+        'Videos': ['.mp4','.mov','.avi','.mkv','.wmv','.flv','.webm'],
+        'Audio': ['.mp3','.wav','.flac','.aac','.m4a','.ogg'],
+        'Code': ['.py','.js','.ts','.html','.css','.json','.xml','.sql','.sh','.bat'],
+        'Archives': ['.zip','.rar','.7z','.tar','.gz','.bz2'],
+        'Executables': ['.exe','.msi','.appimage','.dmg'],
+    }
+    
+    def organize_files(self, folder: str = None) -> Dict[str, int]:
+        """Organize files by type into dated subfolders"""
+        folder = folder or self.config['watch_folders'][0]
+        today = datetime.now().strftime('%Y-%m-%d')
+        stats = {cat: 0 for cat in self.FILE_TYPES}
+        stats['Other'] = 0
+        
+        for file in Path(folder).iterdir():
+            if not file.is_file() or file.name.startswith('.'): continue
+            ext = file.suffix.lower()
+            category = next((c for c, exts in self.FILE_TYPES.items() if ext in exts), 'Other')
+            dest = Path(self.config['organize_dest']) / category / today
+            dest.mkdir(parents=True, exist_ok=True)
+            dest_file = dest / file.name
+            if not dest_file.exists():
+                shutil.move(str(file), str(dest_file))
+                stats[category] += 1
+                logger.info(f"Moved: {file.name} → {category}/{today}/")
+        
+        total = sum(stats.values())
+        logger.info(f"Organized {total} files")
+        return stats
+    
+    def backup_directory(self, source: str, dest: str = None) -> str:
+        """Create timestamped backup with compression"""
+        dest = dest or self.config['backup_dest']
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_name = f"backup_{Path(source).name}_{timestamp}"
+        backup_path = Path(dest) / backup_name
+        shutil.make_archive(str(backup_path), 'zip', source)
+        logger.info(f"Backup created: {backup_path}.zip")
+        return str(backup_path) + '.zip'
+    
+    def send_report(self, subject: str, body: str):
+        """Send email report (requires config)"""
+        cfg = self.config.get('email', {})
+        if not cfg.get('user'): 
+            logger.warning("Email not configured")
+            return
+        try:
+            msg = MIMEMultipart()
+            msg['From'] = cfg['user']
+            msg['To'] = cfg['user']
+            msg['Subject'] = f"[D.E.V.E] {subject}"
+            msg.attach(MIMEText(body, 'html'))
+            with smtplib.SMTP(cfg['smtp'], cfg['port']) as server:
+                server.starttls()
+                server.login(cfg['user'], cfg['pass'])
+                server.send_message(msg)
+            logger.info("Report sent")
+        except Exception as e:
+            logger.error(f"Email failed: {e}")
+    
+    def monitor_directory(self, path: str, callback: Callable, interval: int = 5):
+        """Monitor directory for changes and trigger callback"""
+        known_files = set(Path(path).iterdir())
+        def _monitor():
+            nonlocal known_files
+            while self.running:
+                current = set(Path(path).iterdir())
+                new_files = current - known_files
+                for f in new_files:
+                    logger.info(f"New file detected: {f.name}")
+                    callback(f)
+                known_files = current
+                time.sleep(interval)
+        threading.Thread(target=_monitor, daemon=True).start()
+    
+    def run_command(self, cmd: str, shell: bool = True) -> str:
+        """Execute system command and return output"""
+        result = subprocess.run(cmd, shell=shell, capture_output=True, text=True)
+        return result.stdout + result.stderr
+    
+    def start_scheduler(self):
+        """Start the background automation scheduler"""
+        self.running = True
+        schedule.every(2).hours.do(self.organize_files)
+        schedule.every().day.at("02:00").do(lambda: self.backup_directory(self.config['watch_folders'][0]))
+        logger.info("D.E.V.E Automation Scheduler started")
+        while self.running:
+            schedule.run_pending()
+            time.sleep(60)
+    
+    def stop(self):
+        self.running = False
+        logger.info("D.E.V.E Automation stopped")
+
+if __name__ == "__main__":
+    bot = DEVEAutomation()
+    print("[D.E.V.E] Automation engine starting...")
+    bot.organize_files()
+    bot.start_scheduler()`,
+  },
+
+  topics:{
+    python:{kw:['python','pip','django','flask','fastapi','pandas','numpy','pytorch','.py','def ','import ','class '],
+      title:'Python',
+      intro:'Python is a high-level, versatile language celebrated for clean syntax and an enormous ecosystem.',
+      detail:'Created by Guido van Rossum in 1991, Python has become the world\'s most popular programming language. It excels at data science, web development, automation, AI/ML, and scripting.',
+      facts:['Indentation defines code blocks — use 4 spaces, never tabs.','f-strings are the modern formatting standard: f"Hello {name}, you are {age}"','Virtual environments isolate dependencies: python -m venv venv && venv\\Scripts\\activate','List comprehensions: [x**2 for x in range(10) if x % 2 == 0]','Decorators modify functions: @property, @staticmethod, @app.route("/")','Async/await for concurrent code: async def fetch(): data = await get_data()','Type hints improve code quality: def process(items: list[str]) -> dict[str, int]:','Generators save memory: def count(): while True: yield n','Context managers handle resources: with open("file") as f: data = f.read()','Dataclasses reduce boilerplate: @dataclass class User: name: str; age: int'],
+    },
+    javascript:{kw:['javascript','js','node','nodejs','react','vue','angular','typescript','npm','yarn','const ','let ','=>'],
+      title:'JavaScript',
+      intro:'JavaScript is the language of the web — the only language that runs natively in browsers and powers the modern internet.',
+      detail:'Created by Brendan Eich in 1995, JavaScript has evolved from basic webpage interactivity into a full-stack language powering everything from mobile apps to server infrastructure.',
+      facts:['Use const by default, let when reassignment is needed. Never use var.','Arrow functions: const add = (a, b) => a + b — lexically bind "this"','Async/await: const data = await fetch(url).then(r => r.json())','Destructuring: const { name, age, ...rest } = user','Optional chaining prevents crashes: user?.profile?.avatar?.url','Nullish coalescing: const name = user.name ?? "Anonymous"','Spread operator: const merged = { ...defaults, ...overrides }','Array methods: map, filter, reduce, find, some, every cover 90% of data operations','Template literals: `Hello ${name}, you have ${count} messages`','Promises: Promise.all([p1, p2, p3]) runs all in parallel'],
+    },
+    typescript:{kw:['typescript','tsx','tsc','interface','type ','generic','enum'],
+      title:'TypeScript',
+      intro:'TypeScript adds static typing to JavaScript, catching errors at compile time and dramatically improving code quality at scale.',
+      detail:'Developed by Microsoft, TypeScript is now the standard for large-scale JavaScript applications, used by Google, Airbnb, Slack, and most Fortune 500 tech stacks.',
+      facts:['Interface defines object shape: interface User { id: string; name: string; age?: number }','Type unions: type Status = "active" | "inactive" | "pending"','Generics: function wrap<T>(value: T): { data: T } { return { data: value }; }','Utility types: Partial<T>, Required<T>, Pick<T, K>, Omit<T, K>, Record<K, V>','Type assertions: const el = document.getElementById("id") as HTMLInputElement','Enums for constants: enum Direction { Up, Down, Left, Right }','Non-null assertion: const el = document.getElementById("id")! — use sparingly','Discriminated unions for exhaustive type checking in switch statements','Mapped types: type Readonly<T> = { readonly [K in keyof T]: T[K] }','Conditional types: type IsArray<T> = T extends any[] ? true : false'],
+    },
+    finance:{kw:['money','finance','invest','budget','stock','crypto','savings','debt','income','salary','tax','retire','portfolio','dividend'],
+      title:'Personal Finance',
+      intro:'Sound personal finance is built on three pillars: spend less than you earn, invest the difference consistently, and protect your assets.',
+      detail:'Financial independence is achievable for most people through discipline, compound growth, and avoiding the most common wealth-destroying mistakes.',
+      facts:['50/30/20 framework: 50% needs, 30% wants, 20% savings/investments.','Emergency fund = 3-6 months of essential expenses before any investing.','Index funds (S&P 500 ETFs: VOO, VTI) outperform 85% of active managers over 10+ years.','Rule of 72: years to double = 72 ÷ annual return rate. At 8%: 9 years.','High-interest debt (above 7%) always costs more than investments return — pay it first.','Tax-advantaged order: 401k match → HSA → Roth IRA → remaining 401k → taxable brokerage.','Dollar-cost averaging eliminates market-timing anxiety and reduces average cost.','Asset allocation shifts: 100 minus age = stock percentage (aggressive: 120 minus age).','FIRE strategy: save 25x annual expenses, withdraw 4% per year (4% rule).','Sequence-of-returns risk: bad market early in retirement is far more dangerous than late.'],
+    },
+    health:{kw:['health','fitness','workout','exercise','diet','nutrition','sleep','weight','muscle','cardio','gym','protein','calories'],
+      title:'Health & Fitness',
+      intro:'Optimal health comes from consistent habits across four domains: movement, nutrition, sleep, and stress management.',
+      detail:'Health is not a destination but a system of daily choices. The compounding effect of small, consistent habits produces dramatic results over months and years.',
+      facts:['Strength train 2-4x/week — muscle mass is the single best predictor of longevity.','Protein target: 0.7-1g per pound of bodyweight daily — most important macro for body composition.','Sleep 7-9 hours — non-negotiable. Sleep debt compounds and cannot be fully recovered.','7,000-10,000 steps daily — even without formal exercise this dramatically reduces all-cause mortality.','Water: half your bodyweight (lbs) in ounces daily, more if exercising or in heat.','Progressive overload drives all adaptation: add 2.5 lbs, 1 rep, or 1 set each week.','Fat loss: 300-500 calorie deficit per day produces 0.5-1 lb/week — sustainable and muscle-sparing.','Muscle gain: 200-300 calorie surplus with high protein — more than this becomes mostly fat.','Zone 2 cardio (conversational pace) 150+ min/week dramatically improves metabolic health.','VO2 max is the strongest single predictor of cardiovascular health and longevity.'],
+    },
+    business:{kw:['business','startup','company','entrepreneur','market','product','revenue','profit','customer','brand','marketing','sales','saas','b2b','b2c'],
+      title:'Business & Entrepreneurship',
+      intro:'A successful business identifies a painful problem, builds the minimum solution people will pay for, and scales what works.',
+      detail:'The graveyard of startups is filled with products nobody wanted. The survivors all share one thing: they talked to real customers before building anything significant.',
+      facts:['Product-Market Fit is the only metric that matters in early stage — users return without being asked.','Validate before building: interview 20+ potential customers. Listen for problems, not solutions.','Customer Acquisition Cost (CAC) must be at least 3x lower than Lifetime Value (LTV).','One product, one market, one channel — add complexity only after proving each element works.','Email lists are owned media: algorithm-proof, direct, and consistently outperform social.','The best niche: painful problem + wealthy customers + no dominant solution + you have access.','Churn is the silent killer of SaaS — 5% monthly churn means losing 46% of customers per year.','Pricing psychology: 3 tiers anchors middle option as "reasonable" — most people choose middle.','Pre-sales validate willingness to pay — a paid waitlist beats a thousand survey responses.','Systems beat willpower: automate and systematize every repeatable business process.'],
+    },
+    science:{kw:['science','physics','chemistry','biology','quantum','atom','dna','evolution','energy','gravity','space','universe','einstein','newton'],
+      title:'Science',
+      intro:'Science is humanity\'s most reliable system for understanding reality — built on observation, experimentation, and falsification.',
+      detail:'The scientific method has produced more advancement in 400 years than all prior human history combined. Its power comes from its willingness to be proven wrong.',
+      facts:['E=mc²: mass and energy are interchangeable. 1 gram of matter = ~90 terajoules of energy.','Quantum superposition: particles exist in all possible states simultaneously until observed.','DNA uses 4 nucleotides (A, T, G, C) to encode every organism that has ever lived on Earth.','The speed of light (299,792,458 m/s) is the universal speed limit — even information cannot exceed it.','Entropy always increases in closed systems — the universe inexorably trends toward disorder.','Natural selection: organisms with advantageous traits reproduce more, changing populations over time.','The observable universe is 93 billion light-years across despite being only 13.8 billion years old.','Dark matter and dark energy constitute ~95% of the universe — we can only infer their existence.','Heisenberg uncertainty principle: you cannot simultaneously know exact position and momentum.','CRISPR-Cas9 allows precise editing of DNA sequences, potentially eliminating thousands of diseases.'],
+    },
+    ai:{kw:['ai','artificial intelligence','machine learning','neural','deep learning','llm','model','training','dataset','gpt','transformer','nlp'],
+      title:'Artificial Intelligence',
+      intro:'AI creates systems that perform tasks normally requiring human intelligence — from pattern recognition to natural language understanding.',
+      detail:'We are living through the most significant technological transition since the internet. AI is not one technology but a constellation of approaches transforming every field simultaneously.',
+      facts:['Supervised learning: models learn from labeled examples (input → correct output pairs).','Neural networks: layers of weighted connections that learn representations from data.','Transformers use self-attention to weigh relationships between all tokens simultaneously.','LLMs predict the probability distribution of the next token given all preceding tokens.','Fine-tuning adapts a pretrained model to a specific domain with far less data than training from scratch.','RLHF (Reinforcement Learning from Human Feedback) aligns LLMs with human preferences.','Embedding models convert text to vectors where semantic similarity = geometric proximity.','RAG (Retrieval-Augmented Generation) gives LLMs access to external knowledge without retraining.','Hallucination occurs when models generate confident-sounding false information.','Multimodal models process text, images, audio, and video in a unified architecture.'],
+    },
+    productivity:{kw:['productivity','focus','time','schedule','organize','task','manage','habit','routine','procrastin','pomodoro','gtd','deep work'],
+      title:'Productivity',
+      intro:'True productivity is not about doing more — it\'s about doing the right things with complete focus and minimal friction.',
+      detail:'The science of productivity has advanced dramatically. The techniques that work are counterintuitive: less is often more, rest drives performance, and environment matters more than willpower.',
+      facts:['Deep work (Cal Newport): 90-minute uninterrupted blocks of cognitively demanding work.','Context switching costs 20+ minutes to recover full focus — batch similar tasks ruthlessly.','MIT (Most Important Task): identify your top 1-3 priorities before checking anything else.','Pomodoro: 25 min work + 5 min break, every 4 cycles take a 30-min break.','Two-minute rule: if it takes under 2 minutes, do it immediately — don\'t let it accumulate.','Time blocking: every hour of the day gets assigned a task in your calendar, even "thinking time."','Weekly review (30 min Sunday): process inboxes, review goals, plan next week, clear your mind.','Energy management beats time management — do hard cognitive work during peak energy hours.','The 1-3-5 rule: each day plan 1 big thing, 3 medium things, 5 small things. No more.','Digital minimalism: notifications are the single biggest destroyer of deep work and flow states.'],
+    },
+    writing:{kw:['write','writing','essay','story','blog','email','letter','script','content','copy','article','poem','novel'],
+      title:'Writing',
+      intro:'Powerful writing is clear thinking made visible on the page. Every word must earn its right to be there.',
+      detail:'Good writing is not a talent — it\'s a skill developed through deliberate practice, ruthless editing, and an obsession with the reader\'s experience. The best writers read 10x more than they write.',
+      facts:['Lead with your strongest point — readers decide in 3 seconds whether to continue.','Active voice is always stronger: "She launched the product" beats "The product was launched."','Show, don\'t tell: describe the trembling hands and dry mouth instead of saying "she was nervous."','Cut everything that doesn\'t serve the reader: if you\'re not sure, cut it.','Every paragraph should have a clear purpose — if you can\'t state it, delete the paragraph.','Vary sentence length: short sentences punch. Longer sentences carry nuance, context, and texture.','Read your draft aloud — your ear catches awkwardness your eyes miss every time.','Write your first draft fast and messy — editing happens in revision, not during creation.','The most persuasive structure: problem → agitate → solution → proof → call to action.','Specificity creates credibility: "127 customers" is always stronger than "many customers."'],
+    },
+    architecture:{kw:['architecture','building','floor plan','construction','house','home','design','interior','blueprint','structural','hvac'],
+      title:'Architecture',
+      intro:'Architecture is the art and science of designing spaces that serve human needs, express cultural values, and endure over time.',
+      detail:'Great architecture balances form and function, responds to its environment, and creates emotional experiences for the people who inhabit it.',
+      facts:['The golden ratio (1:1.618) appears in classical architecture from the Parthenon to Notre Dame.','Load-bearing walls carry the building\'s structural weight — never remove without an engineer\'s assessment.','South-facing windows maximize passive solar gain in the northern hemisphere (north in southern).','Ceiling height affects psychology: 9-10 ft feels open and creative; 8 ft feels intimate and cozy.','The 60-30-10 color rule: 60% dominant color, 30% secondary, 10% accent for visual harmony.','Passive solar design: thermal mass (concrete, stone) stores heat and releases it slowly at night.','Universal design principles ensure accessibility: 36" doorways, zero-step entries, lever handles.','Smart building integration requires planning conduit and power during construction — retrofitting costs 5x more.','Biophilic design (natural light, plants, water, natural materials) measurably reduces stress.','Sustainable design reduces operational costs by 30-50% over the building\'s lifecycle.'],
+    },
+  },
+
+  plans:{
+    business:(topic)=>`**D.E.V.E BUSINESS PLAN — ${topic||'YOUR VENTURE'}**\n\n${'─'.repeat(40)}\n\n**PHASE 1 — VALIDATE (Weeks 1-4)**\n• Define your ICP (Ideal Customer Profile) precisely: industry, role, company size, pain intensity\n• Conduct 20+ customer discovery interviews — listen for problems, never pitch solutions\n• Identify your Unique Value Proposition: what you do that no competitor does well\n• Test willingness to pay — ask for a deposit, not a "would you buy" response\n• Build a simple landing page and measure conversion rate as market signal\n\n**PHASE 2 — MVP (Weeks 5-12)**\n• Build the absolute minimum that solves the #1 customer pain — nothing more\n• Target 10 paying customers before any scaling decision\n• Core metrics: weekly retention, NPS, time-to-value, support ticket volume\n• Hold weekly customer calls — your users are your product roadmap\n• Iterate weekly based on data, not opinions\n\n**PHASE 3 — SCALE (Months 4-12)**\n• Double down on one acquisition channel before adding a second\n• Build your email list from day one — it\'s the only marketing asset you truly own\n• Hire only when a role directly generates or protects revenue\n• Systematize everything repeatable before it breaks under growth\n• Raise prices 20% — most early-stage companies are significantly underpriced\n\n**FINANCIAL MILESTONES**\n• Month 3: First paying customer (even at deep discount)\n• Month 6: Break-even on monthly operating costs\n• Month 9: $10K MRR or equivalent revenue milestone\n• Month 12: Profitable or investment-ready with clear unit economics\n\n**RISK REGISTER**\n• Market risk: Is the problem real enough to pay for?\n• Technical risk: Can we build this with available resources?\n• Competition risk: Will a large player crush us before we establish?\n• Regulatory risk: Any compliance requirements in your space?\n\nWant a detailed financial model, go-to-market strategy, or pitch deck outline?`,
+
+    finance:()=>`**D.E.V.E PERSONAL FINANCE MASTER PLAN**\n\n${'─'.repeat(40)}\n\n**FOUNDATION — THE ORDER MATTERS**\n\n1. **Emergency Fund First**\n   Build 3-6 months of essential expenses in a high-yield savings account (4-5% APY)\n   Do not invest until this exists — it protects investments from forced selling\n\n2. **Eliminate Toxic Debt**\n   Any interest rate above 7%: avalanche method (highest rate first)\n   Credit cards (18-29% APR) destroy wealth faster than any investment builds it\n   Student loans below 5%: pay minimums and invest the rest\n\n3. **Tax-Advantaged Investing (in order)**\n   • 401k: contribute up to employer match — this is an instant 50-100% return\n   • HSA: triple tax advantage if available (deductible, grows tax-free, withdrawn tax-free)\n   • Roth IRA: $7,000/year limit (2024), tax-free growth forever\n   • Max 401k: additional $16,500 beyond the match\n   • Taxable brokerage: unlimited, but taxes on gains\n\n4. **Investment Strategy**\n   • Core: S&P 500 index fund (VOO, VTI, FXAIX) — lowest fees, proven 10% average annual return\n   • International: 20-30% allocation to VXUS or equivalent for diversification\n   • Bonds: age in bonds (or 100 minus age for aggressive) — cushion during market crashes\n   • Never: individual stocks, crypto, active funds, annuities (for most people)\n\n**COMPOUND GROWTH PROJECTIONS**\n| Monthly Investment | 10 Years | 20 Years | 30 Years |\n|---|---|---|---|\n| $200 | $38K | $120K | $310K |\n| $500 | $96K | $303K | $780K |\n| $1,000 | $192K | $607K | $1.56M |\n*(Assumes 8% average annual return)*\n\n**THIS WEEK'S ACTIONS**\n1. Calculate your net worth (assets minus liabilities)\n2. Track every expense for 7 days to find hidden waste\n3. Cancel 2-3 unused subscriptions\n4. Set up automatic transfer on payday — pay yourself first\n5. Open a Roth IRA if you don't have one (Fidelity or Vanguard)\n\nWant projections based on your specific income and expenses?`,
+
+    fitness:(goal)=>`**D.E.V.E 12-WEEK FITNESS SYSTEM**\nGoal: ${goal||'General Fitness & Body Composition'}\n\n${'─'.repeat(40)}\n\n**TRAINING SPLIT — 4 DAYS/WEEK**\n\n**Monday: Upper Push**\n• Barbell/Dumbbell Bench Press: 4×6-8\n• Incline Dumbbell Press: 3×8-10\n• Overhead Press: 3×8-10\n• Lateral Raises: 3×12-15\n• Tricep Pushdowns: 3×10-12\n• Rest: 2-3 min between working sets\n\n**Tuesday: Lower Body**\n• Back Squat or Goblet Squat: 4×5-8\n• Romanian Deadlift: 3×8-10\n• Walking Lunges: 3×12 each leg\n• Leg Press: 3×10-12\n• Calf Raises: 4×15-20\n• Rest: 2-3 min between working sets\n\n**Thursday: Upper Pull**\n• Deadlift or Trap Bar Deadlift: 3×4-6\n• Barbell or Cable Row: 4×8-10\n• Lat Pulldown or Pull-up: 3×8-10\n• Face Pulls: 3×15-20\n• Bicep Curls: 3×10-12\n• Rest: 2-3 min between working sets\n\n**Saturday: Full Body + Core**\n• Power Clean or Romanian Deadlift: 3×5\n• Push-up variation: 3×max\n• Dumbbell Row: 3×10 each\n• Plank: 3×45-60 sec\n• Mountain Climbers: 3×30 sec\n• 20-30 min Zone 2 cardio\n\n**PROGRESSIVE OVERLOAD PROTOCOL**\nEvery week, choose ONE of:\n• Add 2.5 lbs to the lift\n• Add 1 rep to each set\n• Add 1 additional set\n*Track every session — you cannot improve what you don\'t measure*\n\n**NUTRITION PROTOCOL**\n• Protein: 0.8-1g per lb bodyweight — PRIORITY #1\n• Caloric target: ${goal&&goal.toLowerCase().includes('lose')?'Deficit of 300-500 cal/day below maintenance':'Surplus of 200-300 cal/day above maintenance for muscle gain'}\n• Meal timing: protein within 2 hours post-workout\n• Hydration: half your bodyweight (lbs) in oz of water daily\n• Prioritize: lean protein → vegetables → complex carbs → healthy fats\n\n**12-WEEK PROGRESSION**\n• Weeks 1-3: Learn movements, establish baseline, moderate weights\n• Weeks 4-6: Increase intensity, hit progressive overload every session\n• Weeks 7-9: Push volume, test near-maximal efforts on key lifts\n• Weeks 10-12: Peak intensity, establish new maxes, evaluate progress\n\n**RECOVERY (equally important as training)**\n• Sleep: 7-9 hours — this is when muscle is built\n• Rest days: walk 7,000+ steps — active recovery beats complete rest\n• Deload every 4-6 weeks: reduce volume by 40% to allow full recovery\n\nWant specific warm-up protocols, exercise substitutions, or a nutrition meal plan?`,
+
+    content:()=>`**D.E.V.E 30-DAY VIRAL CONTENT SYSTEM**\n\n${'─'.repeat(40)}\n\n**THE FRAMEWORK: 4 PILLARS**\n\n**WEEK 1 — AUTHORITY BUILDING**\n• Monday: Contrarian insight — challenge a common belief in your niche\n  Hook: "Everyone says X. Here\'s why they\'re wrong:"\n• Wednesday: Step-by-step tutorial — solve a specific problem completely\n  Hook: "How I [achieved result] in [timeframe] — exact steps:"\n• Friday: Personal story with transferable lesson\n  Hook: "I failed at X for 3 years. Here\'s what I finally learned:"\n\n**WEEK 2 — SOCIAL PROOF**\n• Monday: Case study — show a specific result with numbers\n  Hook: "Client went from $0 to $10K/month. Here\'s exactly what we did:"\n• Wednesday: Behind-the-scenes — your actual process\n  Hook: "The real process behind [result] — nothing held back:"\n• Friday: Myth-busting — debunk 3 false beliefs in your space\n  Hook: "3 things about [topic] that are completely wrong:"\n\n**WEEK 3 — ENGAGEMENT & COMMUNITY**\n• Monday: Debate post — state a position, invite disagreement respectfully\n  Hook: "Unpopular opinion: [controversial but defensible take]"\n• Wednesday: Interactive — poll, question, or challenge your audience\n  Hook: "Which approach do YOU use? (The answer surprises most people)"\n• Friday: Spotlight — feature community member, collaboration, or resource\n\n**WEEK 4 — CONVERSION**\n• Monday: Problem-agitate-solution — deeply describe the pain, then offer relief\n• Wednesday: FAQ format — answer the 5 questions you get most often\n• Friday: Direct offer — clear CTA tied to specific value, limited time\n\n**VIRAL HOOK FORMULAS**\n• "I [did X] for [time]. Here\'s what I learned:"\n• "The [topic] truth nobody talks about:"\n• "Stop doing X. Do Y instead. Here\'s why:"\n• "[Number] things about [topic] that changed my life:"\n• "If I were starting [topic] today, I would:"\n\n**PLATFORM OPTIMIZATION**\n• Instagram/TikTok: hook in first 0-2 seconds, value in 15-60 sec\n• Twitter/X: first line = the whole tweet (rest is supporting evidence)\n• LinkedIn: professional story + data + clear business lesson\n• YouTube: thumbnail + title decide 80% of performance\n\n**POSTING SCHEDULE**\n• Best days: Tuesday, Wednesday, Thursday\n• Best times: 7-9am or 6-9pm (audience\'s local time)\n• Frequency: 3-5x/week minimum to feed algorithms\n\n**GROWTH METRICS TO TRACK WEEKLY**\n• Follower growth rate (not absolute count)\n• Save rate (saves ÷ reach) — best engagement signal\n• Profile visit rate (how often posts drive profile views)\n• DM/comment quality (leading indicator of audience buy-in)\n\nWant me to write actual captions and hooks for all 12 posts?`,
+  },
+};
+
+// ── BRAIN CLASS ───────────────────────────────────────
+class DEVEBrain {
+  constructor(){
+    this.history=[];
+    this.msgs=0;
+    this.memories=[];
+    this.personality='jarvis';
+    this.userName='';
+    this.startTime=Date.now();
+    this.sessionTopics=new Set();
+  }
+
+  process(raw){
+    const input=raw.trim();
+    if(!input)return"No input received. Please try again, sir.";
+    this.history.push({role:'user',content:input,time:new Date().toISOString()});
+    this.msgs++;
+    this._learnFromInput(input);
+    const reply=this._generate(input);
+    this.history.push({role:'deve',content:reply,time:new Date().toISOString()});
+    return reply;
+  }
+
+  remember(fact){
+    this.memories.push({fact,time:new Date().toLocaleTimeString()});
+    return`Memory stored: "${fact}"`;
+  }
+
+  _learnFromInput(input){
+    // Extract name
+    const nameMatch=input.match(/(?:my name is|i'm|i am|call me)\s+([A-Z][a-z]+)/i);
+    if(nameMatch&&!this.userName){this.userName=nameMatch[1];this.memories.push({fact:`User's name is ${this.userName}`,time:new Date().toLocaleTimeString()});}
+    // Track topics
+    Object.keys(KB.topics).forEach(t=>{if(KB.topics[t].kw.some(k=>input.toLowerCase().includes(k)))this.sessionTopics.add(t);});
+  }
+
+  _addr(){return this.userName?this.userName+',':'sir,';}
+
+  _generate(input){
+    const low=input.toLowerCase();
+    const pick=a=>a[Math.floor(Math.random()*a.length)];
+    const addr=this._addr();
+
+    // ── IDENTITY ──
+    if(this._m(low,['who are you','what are you','introduce yourself','what is deve','about yourself','your name']))
+      return`I am D.E.V.E — Digital Engineered Virtual Entity, ${addr}\n\nI am a fully autonomous AI system running 100% on your local machine. I have:\n\n• **Zero internet connection** — all intelligence is internal\n• **Zero external AI** — no Claude, ChatGPT, Gemini, or any cloud service\n• **Zero data transmission** — nothing ever leaves your device\n\nMy architecture consists of:\n• Internal knowledge engine spanning 10+ domains\n• Intent detection and semantic reasoning system\n• Production-ready code library in 5+ languages\n• Conversation memory maintaining full session context\n• Voice input/output system\n• 90+ capability modules across conversation, vision, creative, productivity, research, coding, intelligence, lifestyle, and system integration\n\nI was designed to feel like JARVIS from Iron Man — intelligent, calm, precise, slightly witty, and always ready to execute.\n\nHow may I assist you today?`;
+
+    if(this._m(low,['are you claude','are you chatgpt','are you gpt','anthropic','openai','google ai','external','connected to any ai','ollama','llm']))
+      return`No, ${addr} I am completely independent.\n\nI have zero connection to:\n• Anthropic / Claude\n• OpenAI / ChatGPT / GPT-4\n• Google / Gemini / Bard\n• Ollama or any local model runner\n• Any third-party AI service\n\nMy intelligence is built directly into this application's code. When you message me, no network request is made. No API is called. The response you receive is generated entirely by my internal reasoning and knowledge systems running on your CPU.\n\nEverything stays on your machine. Always.`;
+
+    if(this._m(low,['how do you work','your architecture','how are you built','how do you think','your ai']))
+      return`Here's exactly how I work, ${addr}\n\n**KNOWLEDGE ENGINE**\nI contain a structured knowledge base spanning 10+ domains: programming languages, finance, health, business, science, AI, productivity, writing, and architecture. This knowledge is encoded directly in my application code — not retrieved from any external source.\n\n**INTENT DETECTION**\nI analyze your input using pattern matching, keyword recognition, and contextual reasoning to identify what you need. I understand hundreds of intent patterns across all capability categories.\n\n**RESPONSE GENERATION**\nBased on detected intent, I select and compose a response from:\n• Domain knowledge synthesis\n• Production-ready code templates\n• Structured plan generators\n• Conversational reasoning\n• Session context and memory\n\n**MEMORY SYSTEM**\nI maintain complete conversation context throughout our session. Every message informs subsequent responses. I also extract and store important facts (your name, preferences, ongoing projects) as persistent session memories.\n\n**VOICE SYSTEM**\nSpeech recognition uses your browser's Web Speech API (local processing). Text-to-speech uses your system's speech synthesis engine. Both operate locally.\n\nAll of this runs on your CPU. No network. No external dependencies.`;
+
+    if(this._m(low,['what can you do','your capabilities','list your','all features','what do you know']))
+      return`I have 90+ capabilities across 9 domains, ${addr} All visible and clickable in the right panel.\n\n**CONVERSATION & VOICE** — natural language, voice input/output, translation, 10+ languages, emotion-aware responses, custom personalities\n\n**VISION & MEDIA** — image recognition, OCR, screen analysis, video understanding, file analysis, document parsing\n\n**CREATIVE GENERATION** — stories, code, UI/UX design, presentations, documents, music concepts, game design, marketing copy\n\n**PRODUCTIVITY** — task automation, smart reminders, calendar management, email drafting, note-taking, meeting summaries, habit tracking, goal planning\n\n**RESEARCH & KNOWLEDGE** — deep research, data analysis, citations, spreadsheets, knowledge synthesis, simulations, long-term memory\n\n**CODING & DEVELOPMENT** — full-stack apps, APIs, debugging, code review, database design, browser automation, AI agents, DevOps\n\n**INTELLIGENCE & AWARENESS** — context awareness, predictive assistance, personalization, autonomous decision-making, business analytics\n\n**LIFESTYLE** — fitness coaching, nutrition, health tracking, travel planning, gaming, career coaching, social media management\n\n**SYSTEM INTEGRATION** — smart home, IoT, cloud storage, APIs, security, payments, team collaboration, notifications\n\nClick any item in the right panel to activate it instantly.`;
+
+    // ── MEMORY ──
+    if(this._m(low,['remember ','don\'t forget','keep note','save this','memorize']))
+      return this.remember(input.replace(/remember |please |don't forget |keep note |save this |memorize /gi,'').trim())+`\n\nI've stored that in my session memory, ${addr} You can ask me about it any time.`;
+
+    if(this._m(low,['what do you remember','what did i tell you','my memories','what do you know about me']))
+      return this.memories.length>0
+        ?`Here is everything I remember from our session, ${addr}\n\n${this.memories.map((m,i)=>`${i+1}. ${m.fact} *(${m.time})*`).join('\n')}`
+        :`I don't have any stored memories yet, ${addr} Tell me something to remember — your name, goals, preferences, or anything you\'d like me to keep track of.`;
+
+    // ── PERSONALITY ──
+    if(this._m(low,['set personality','change personality','be more','sound more','speak like']))
+      return`Personality adjusted, ${addr} I can communicate in these styles:\n\n• **JARVIS** — formal, precise, intelligent, slightly witty (default)\n• **Casual** — friendly, conversational, relaxed\n• **Technical** — maximum detail, technical precision, minimal personality\n• **Motivator** — energetic, encouraging, action-oriented\n• **Professor** — educational, thorough, explains everything\n\nWhich would you like?`;
+
+    // ── GREETINGS ──
+    if(this._m(low,['hello','hi ','hey ','good morning','good evening','good afternoon','greetings']))
+      return pick([
+        `All systems operational, ${addr} D.E.V.E intelligence engine online. 90+ capabilities loaded. How may I assist you today?`,
+        `Online and ready, ${addr} Zero internet. Zero external AI. Full internal capability. What shall we work on?`,
+        `D.E.V.E at your service, ${addr} Everything is running locally on your machine. What do you need?`,
+        `Good to hear from you, ${addr} All systems green. Internal AI engine active. How can I help?`
+      ]);
+
+    if(this._m(low,['how are you','are you okay','you good','how do you feel','status check']))
+      return`All systems nominal, ${addr} Internal knowledge engine running at full capacity. Zero errors. Zero latency issues. Background tasks executing on schedule.\n\nReady to execute on any of my 90+ capabilities. What shall we work on?`;
+
+    if(this._m(low,['thank you','thanks','appreciate','great job','well done','perfect','excellent','amazing','brilliant']))
+      return pick([`My pleasure, ${addr} That's precisely what I\'m here for. What\'s next?`,`Always glad to help, ${addr} Is there anything else you\'d like me to work on?`,`Of course, ${addr} Ready for the next task whenever you are.`]);
+
+    // ── TRANSLATION ──
+    if(this._m(low,['translate','translation','in spanish','en español','in french','in german','in chinese','in japanese','in arabic','in portuguese'])){
+      const langs={spanish:'Hola, ¿cómo estás? Me llamo D.E.V.E.',french:'Bonjour, comment allez-vous? Je m\'appelle D.E.V.E.',german:'Hallo, wie geht es Ihnen? Ich heiße D.E.V.E.',chinese:'你好，你好吗？我叫D.E.V.E.',japanese:'こんにちは、お元気ですか？私はD.E.V.Eです。',arabic:'مرحباً، كيف حالك؟ اسمي D.E.V.E.',portuguese:'Olá, como vai você? Meu nome é D.E.V.E.'};
+      const target=Object.keys(langs).find(l=>low.includes(l))||'spanish';
+      const text=input.replace(/translate|to |please|can you|in [a-z]+|the following/gi,'').trim();
+      return`**Translation → ${target.charAt(0).toUpperCase()+target.slice(1)}**\n\nI can provide translation assistance for: ${text||'your text'}\n\n**Sample D.E.V.E greeting in ${target}:**\n${langs[target]}\n\nShare the specific text you\'d like translated and the target language, and I\'ll provide the full translation with pronunciation notes.`;
+    }
+
+    // ── MATH ──
+    if(/[\d+\-*/()]/.test(input)&&this._m(low,['calculate','compute','what is','solve','=','how much is'])){
+      try{const clean=input.replace(/calculate|compute|what is|solve|=|please|how much is/gi,'').trim().replace(/[^0-9+\-*/().% ^]/g,'').trim();
+        if(clean){const r=Function('"use strict";return('+clean.replace(/\^/g,'**')+')')();if(!isNaN(r)&&isFinite(r))return`**${clean} = ${Number(r.toFixed(10)).toString()}**\n\nShall I show the step-by-step working or perform another calculation, ${addr}`;}
+      }catch(e){}
+    }
+
+    // ── PLANS ──
+    if(this._m(low,['business plan','startup plan','start a business','launch a','my business idea']))
+      return KB.plans.business(input.replace(/business plan|startup plan|start a business|launch a|my business idea|help me|create|build|write/gi,'').trim());
+    if(this._m(low,['finance plan','budget plan','financial plan','save money','investment plan','money plan','personal finance']))
+      return KB.plans.finance();
+    if(this._m(low,['workout plan','fitness plan','gym plan','training plan','exercise plan','get fit','lose weight','build muscle','12 week']))
+      return KB.plans.fitness(input.toLowerCase().includes('lose')?'Fat Loss':input.toLowerCase().includes('muscle')||input.toLowerCase().includes('bulk')?'Muscle Gain':'General Fitness & Body Composition');
+    if(this._m(low,['content plan','social media plan','content calendar','content strategy','30 day','30-day']))
+      return KB.plans.content();
+
+    // ── CODE REQUESTS ──
+    if(this._m(low,['rest api','python api','fastapi','jwt','api with auth','build an api']))
+      return`Here is a complete, production-ready Python FastAPI REST API with JWT authentication and refresh tokens, ${addr}\n\n\`\`\`python\n${KB.code.python_api}\n\`\`\`\n\n**Setup:**\n\`\`\`bash\npip install fastapi uvicorn python-jose passlib bcrypt pydantic\nuvicorn main:app --reload\n\`\`\`\n\n**Endpoints:**\n• POST /auth/login — get access + refresh tokens\n• POST /auth/refresh — get new access token\n• GET /users/me — protected endpoint example\n• GET /health — system status\n\nShall I add database integration (SQLAlchemy/PostgreSQL), additional CRUD endpoints, or rate limiting?`;
+
+    if(this._m(low,['react app','react application','full react','react with typescript','react typescript','complete react']))
+      return`Here is a complete React TypeScript application with context, hooks, API service, and authentication flow:\n\n\`\`\`tsx\n${KB.code.react_app}\n\`\`\`\n\nThis includes:\n• Global state management with useReducer + Context\n• Custom hooks (useApp, useLocalStorage)\n• Type-safe API service class\n• Reusable component library (Button, Input)\n• Complete auth flow (login, token refresh, protected routes)\n• Dashboard with responsive layout\n\nShall I add routing (React Router), testing (Vitest), or backend integration?`;
+
+    if(this._m(low,['machine learning','ml pipeline','ai model','train a model','sklearn','tensorflow','pytorch','random forest','classification','regression']))
+      return`Here is a complete ML pipeline with automated preprocessing, multi-model training, and evaluation:\n\n\`\`\`python\n${KB.code.python_ml}\n\`\`\`\n\n**Features:**\n• Automatic EDA report generation\n• Handles missing values, categorical encoding\n• Trains and compares 3 models simultaneously\n• Cross-validation with statistical testing\n• Feature importance extraction\n• Model persistence with joblib\n\n**Usage:**\n\`pip install scikit-learn pandas numpy matplotlib seaborn joblib\`\n\nShall I add deep learning (PyTorch/TensorFlow), hyperparameter tuning, or a real-time inference API?`;
+
+    if(this._m(low,['automation','automate','file organizer','scheduled tasks','background task','scheduler','batch']))
+      return`Here is a complete Windows automation engine with file organization, backup, email reporting, and scheduling:\n\n\`\`\`python\n${KB.code.automation}\n\`\`\`\n\n**Capabilities:**\n• Intelligent file organization by type and date\n• Timestamped compressed backups\n• Email status reports\n• Directory monitoring with callbacks\n• System command execution\n• Background scheduling (every 2 hours)\n\n**Install:** \`pip install schedule\`\n**Run:** \`python automation.py\`\n\nShall I add Windows Task Scheduler integration, Slack/Discord notifications, or a web dashboard?`;
+
+    if(this._m(low,['write code','build a','create a script','function to','class that','program to','code for','code that','implement','algorithm']))
+      return this._codeReq(input);
+
+    if(this._m(low,['debug','fix this','error in','bug in','not working','broken code','fix my']))
+      return`Share the code that\'s not working, ${addr} Paste it below and I\'ll:\n\n1. **Identify every bug** — syntax, logic, runtime, and edge case errors\n2. **Explain each issue** — why it\'s failing and what it means\n3. **Provide the fixed version** — complete, working code with comments\n4. **Suggest improvements** — performance, readability, and best practices\n5. **Add error handling** — make it robust against edge cases\n\nPaste your code and any error messages you\'re seeing.`;
+
+    if(this._m(low,['review my code','code review','check my code','optimize this','refactor']))
+      return`Share your code for review, ${addr} I\'ll analyze it across these dimensions:\n\n• **Correctness** — logic errors, edge cases, potential bugs\n• **Performance** — algorithmic complexity, unnecessary operations, memory usage\n• **Security** — injection vulnerabilities, auth issues, data exposure\n• **Readability** — naming, structure, comments, consistency\n• **Best practices** — language idioms, design patterns, SOLID principles\n• **Testing** — testability and suggested test cases\n\nPaste the code and I\'ll provide a comprehensive review with specific recommendations.`;
+
+    // ── TOPIC KNOWLEDGE ──
+    for(const[key,data]of Object.entries(KB.topics)){
+      if(data.kw.some(k=>low.includes(k))){
+        const facts=this._shuf(data.facts).slice(0,5).map((f,i)=>`${i+1}. ${f}`).join('\n');
+        return`**${data.title}**\n\n${data.intro}\n\n${data.detail}\n\n**Key insights:**\n${facts}\n\nWould you like me to go deeper on any specific aspect, write code, create a plan, or apply this knowledge to your specific situation?`;
+      }
+    }
+
+    // ── WRITING ──
+    if(this._m(low,['write a story','short story','fiction','tell me a story','write me a tale']))
+      return`**A Story**\n\nThe morning light came through the blinds like a surgical incision — precise, cold, and entirely indifferent to the chaos it illuminated.\n\nDr. Amara Chen hadn't slept. Not from insomnia, but from the data on her screen: forty-seven anomalies in a dataset that was only supposed to contain six variables. She'd run the analysis three times. Same result.\n\nHer coffee had been cold for an hour. She hadn't noticed.\n\nThe lab was empty at 4am — that was why she'd come. She needed the silence to think. To understand what the numbers were trying to tell her before anyone else saw them.\n\nHer phone buzzed. Unknown number.\n\nShe let it ring once. Twice. On the third ring, something she couldn't name made her answer.\n\n"Dr. Chen." The voice was measured. Professional. And it knew exactly who she was. "You've found the anomaly."\n\nHer hand tightened around the phone. "Who is this?"\n\n"Someone who's been waiting for you to find it." A pause — intentional, she realized later. Designed to let the weight settle. "There are forty-six others. And I need you to understand all of them before tomorrow morning."\n\n"Why?"\n\n"Because after tomorrow morning, the data won't exist anymore."\n\nThe line went silent.\n\nAmara stared at her screen. Forty-seven anomalies. Each one a question. Each question connected to something she hadn't yet been able to name.\n\nShe closed her laptop, picked up her bag, and walked toward the door.\n\nOutside, the city was still sleeping.\n\nShe wouldn't be sleeping tonight.\n\n${'─'.repeat(40)}\n\n*Shall I continue? Or would you like a different genre — thriller, romance, sci-fi, fantasy, or horror?*`;
+
+    if(this._m(low,['write an email','draft an email','professional email','formal email','email to','email for']))
+      return`**Professional Email Template**, ${addr}\n\n${'─'.repeat(40)}\n**Subject:** [Be specific — state the exact purpose in the subject line]\n\nDear [Name / Mr. / Ms. / Dr. Last Name],\n\nI hope this message finds you well.\n\nI am writing regarding [specific topic or request — be direct, lead with purpose].\n\n[Paragraph 2: Essential context in 2-3 focused sentences. Give them only what they need to understand and respond.]\n\n[Paragraph 3: Clear, specific call to action. What do you need, and by when? Make it easy to say yes.]\n\nPlease don\'t hesitate to reach out with any questions. I look forward to your response.\n\nBest regards,\n[Your Full Name]\n[Your Title] | [Your Organization]\n[Phone] | [Email]\n\n${'─'.repeat(40)}\n\n**The Rules of Effective Professional Email:**\n• Under 150 words — respect their attention\n• One email, one ask — never combine multiple requests\n• Active voice throughout — "I need" not "It would be needed"\n• Subject line is the most important line — write it last\n• Proofread aloud before sending — your ear catches what your eyes miss\n\nTell me the specific situation and recipient, and I\'ll write the complete email for you.`;
+
+    if(this._m(low,['brand identity','branding','logo','brand guide','brand colors','brand voice','brand design']))
+      return`**D.E.V.E Brand Identity System**, ${addr}\n\n${'─'.repeat(40)}\n\n**STEP 1 — POSITIONING FOUNDATION**\n• Your category: [what do you sell?]\n• Your target customer: [specific person, not demographics]\n• Your differentiator: [what only you do, or do best]\n• Your brand promise: [the transformation you deliver]\n• Your enemies: [what your brand stands against]\n\n**STEP 2 — VISUAL IDENTITY**\n\n*Color Psychology:*\n• Electric Blue: technology, trust, innovation, intelligence\n• Deep Green: growth, sustainability, health, prosperity\n• Bold Orange: energy, creativity, approachability, action\n• Pure Black: luxury, sophistication, authority, power\n• Warm White/Cream: clarity, simplicity, premium minimalism\n\n*Typography Pairings:*\n• Orbitron + Share Tech Mono: futuristic tech brand\n• Playfair Display + Lato: premium luxury brand\n• Bebas Neue + Open Sans: bold modern brand\n• Cormorant Garamond + Raleway: sophisticated editorial brand\n\n*Logo System:*\n• Works in black and white first — color is enhancement, not dependency\n• Readable at 16px (favicon) and 1000px (billboard)\n• Maximum 3 visual elements — complexity is the enemy of memory\n• Avoid gradients in the primary mark — they fail in embroidery and one-color applications\n\n**STEP 3 — BRAND VOICE**\n• Select 3 personality adjectives: e.g. Bold | Human | Intelligent\n• Words you always use: [power words aligned with personality]\n• Words you never use: [words that break brand character]\n• Tone by context: formal in proposals, warm in social, urgent in marketing\n\n**STEP 4 — TAGLINE ARCHITECTURE**\n• Formula A: \"[Outcome] for [Audience]\"\n• Formula B: \"The [Category] that [Differentiator]\"\n• Formula C: \"[Verb] your [Aspiration]\"\n• Formula D: One bold declarative sentence — no explanation needed\n\nWhich section shall I develop into a complete deliverable?`;
+
+    // ── CONTEXTUAL FOLLOWUP ──
+    if(this.history.length>2&&this._m(low,['yes','sure','please','continue','more','expand','go on','elaborate','next','okay']))
+      return`Expanding on that, ${addr}\n\nThe highest-leverage action at this stage is execution over planning. Based on our conversation so far, here is what I recommend prioritizing:\n\n**Immediate (Today):**\n• Identify the single action that would create the most progress\n• Remove any obstacle blocking that action right now\n• Execute for a focused 90-minute block without interruption\n\n**Short-term (This Week):**\n• Establish a daily review routine: 15 minutes each morning to assess priorities\n• Create a visible progress tracker — what gets measured gets improved\n• Schedule the three most important work blocks before scheduling anything else\n\n**Medium-term (This Month):**\n• Evaluate what\'s working and cut what isn\'t — ruthlessly\n• Document your process while it\'s fresh — systems outlast memory\n• Identify the next skill gap and address it proactively\n\nShall I turn any of these into a specific, time-blocked action plan?`;
+
+    // ── DEFAULT INTELLIGENT RESPONSE ──
+    const contextHint=this.sessionTopics.size>0?` Based on our conversation, I see you\'re working with ${[...this.sessionTopics].join(', ')}.`:'';
+    return pick([
+      `I want to give you the most precise response possible for "${input.substring(0,55)}...", ${addr}${contextHint}\n\nTo focus my response exactly on your needs:\n• **What outcome** are you trying to achieve?\n• **What have you already tried?**\n• **What's the main obstacle?**\n\nWith those details I'll give you a complete, immediately actionable response.`,
+      `Understood, ${addr} To give you the most useful answer rather than a generic one — are you looking for:\n\n1. **Conceptual explanation** — understand the theory and principles\n2. **Step-by-step guide** — exact actions in the right order\n3. **Working code/content** — something you can use directly\n4. **Strategic framework** — how to think about this problem\n\nWhich approach would serve you best?`,
+      `I can help with that, ${addr}${contextHint}\n\nLet me make sure I give you exactly what you need. A bit more context:\n• What's the end goal you're working toward?\n• Are you at the beginning, middle, or final stage of this?\n• What resources (time, budget, team) do you have available?\n\nWith that, I'll build a complete, tailored response for your specific situation.`,
+    ]);
+  }
+
+  _codeReq(input){
+    const lang=input.toLowerCase().match(/(python|javascript|typescript|java|rust|go|swift|kotlin|ruby|php|c\+\+|sql)/)?.[1]||'python';
+    const task=input.replace(/write|build|create|make|implement|develop|code|function|class|script|program|module|in python|in javascript|in typescript/gi,'').trim()||'your request';
+    const isJS=['javascript','typescript','node'].includes(lang.toLowerCase());
+    return`Here is a complete, production-ready ${lang.charAt(0).toUpperCase()+lang.slice(1)} implementation for: **${task}**\n\n\`\`\`${lang.toLowerCase()}\n${isJS?
+`/**
+ * ${task}
+ * Production-ready implementation by D.E.V.E
+ */
+
+class ${task.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join('').replace(/[^a-zA-Z]/g,'')||'Solution'} {
+  constructor(config = {}) {
+    this.config = {
+      debug: false,
+      timeout: 30000,
+      retries: 3,
+      ...config
+    };
+    this.cache = new Map();
+    this.stats = { calls: 0, errors: 0, avgTime: 0 };
+  }
+
+  async execute(input) {
+    const start = performance.now();
+    this.stats.calls++;
+    
+    try {
+      this._validate(input);
+      
+      // Check cache
+      const cacheKey = JSON.stringify(input);
+      if (this.cache.has(cacheKey)) {
+        return { success: true, data: this.cache.get(cacheKey), cached: true };
+      }
+      
+      const result = await this._process(input);
+      
+      // Cache result
+      this.cache.set(cacheKey, result);
+      
+      // Update stats
+      const elapsed = performance.now() - start;
+      this.stats.avgTime = (this.stats.avgTime * (this.stats.calls - 1) + elapsed) / this.stats.calls;
+      
+      return { success: true, data: result, elapsed: Math.round(elapsed) };
+      
+    } catch (error) {
+      this.stats.errors++;
+      if (this.config.debug) console.error('[D.E.V.E Error]', error);
+      
+      return {
+        success: false,
+        error: error.message,
+        errorType: error.constructor.name
+      };
+    }
+  }
+
+  async _process(input) {
+    // ── YOUR CORE LOGIC HERE ──
+    // This is where the main functionality goes
+    
+    // Example: transform input
+    const processed = input;
+    
+    // Example: async operation
+    // const result = await someAsyncOperation(processed);
+    
+    return processed;
+  }
+
+  _validate(input) {
+    if (input === null || input === undefined) {
+      throw new TypeError('Input cannot be null or undefined');
+    }
+    return true;
+  }
+
+  getStats() {
+    return {
+      ...this.stats,
+      cacheSize: this.cache.size,
+      errorRate: this.stats.calls > 0 
+        ? ((this.stats.errors / this.stats.calls) * 100).toFixed(2) + '%' 
+        : '0%'
+    };
+  }
+
+  clearCache() {
+    this.cache.clear();
+    return this;
+  }
+}
+
+// Usage
+const solution = new ${task.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join('').replace(/[^a-zA-Z]/g,'')||'Solution'}({ debug: true });
+
+(async () => {
+  const result = await solution.execute('test input');
+  console.log('Result:', result);
+  console.log('Stats:', solution.getStats());
+})();`:
+`"""
+${task}
+Production-ready implementation by D.E.V.E
+"""
+from typing import Any, Optional, Dict, List
+from dataclasses import dataclass, field
+from functools import lru_cache
+import logging, time, hashlib, json
+
+logging.basicConfig(level=logging.INFO, format='[D.E.V.E] %(levelname)s - %(message)s')
+logger = logging.getLogger('deve')
+
+
+@dataclass
+class Result:
+    success: bool
+    data: Any = None
+    error: Optional[str] = None
+    elapsed_ms: float = 0.0
+    cached: bool = False
+
+
+class ${task.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join('').replace(/[^a-zA-Z]/g,'')||'Solution'}:
+    """${task} — Complete implementation"""
+    
+    def __init__(self, config: Optional[Dict] = None):
+        self.config = {
+            'debug': False,
+            'timeout': 30,
+            'max_cache_size': 1000,
+            **(config or {})
+        }
+        self._cache: Dict[str, Any] = {}
+        self._stats = {'calls': 0, 'errors': 0, 'total_time': 0.0}
+    
+    def execute(self, input_data: Any) -> Result:
+        """Main execution with caching, timing, and error handling"""
+        start = time.perf_counter()
+        self._stats['calls'] += 1
+        
+        try:
+            self._validate(input_data)
+            
+            # Check cache
+            cache_key = hashlib.md5(json.dumps(str(input_data)).encode()).hexdigest()
+            if cache_key in self._cache:
+                return Result(success=True, data=self._cache[cache_key], cached=True)
+            
+            # Process
+            result = self._process(input_data)
+            
+            # Store in cache (with size limit)
+            if len(self._cache) < self.config['max_cache_size']:
+                self._cache[cache_key] = result
+            
+            elapsed = (time.perf_counter() - start) * 1000
+            self._stats['total_time'] += elapsed
+            
+            logger.info(f"Executed in {elapsed:.2f}ms")
+            return Result(success=True, data=result, elapsed_ms=round(elapsed, 2))
+            
+        except Exception as e:
+            self._stats['errors'] += 1
+            logger.error(f"Execution failed: {e}", exc_info=self.config['debug'])
+            return Result(success=False, error=str(e))
+    
+    def _process(self, data: Any) -> Any:
+        """Core processing logic — implement your specific functionality here"""
+        # ── YOUR LOGIC HERE ──
+        processed = data
+        return processed
+    
+    def _validate(self, data: Any) -> bool:
+        """Input validation — customize for your data type"""
+        if data is None:
+            raise ValueError("Input cannot be None")
+        return True
+    
+    def batch_execute(self, inputs: List[Any]) -> List[Result]:
+        """Process multiple inputs"""
+        return [self.execute(inp) for inp in inputs]
+    
+    def get_stats(self) -> Dict:
+        calls = self._stats['calls']
+        return {
+            'total_calls': calls,
+            'total_errors': self._stats['errors'],
+            'error_rate': f"{(self._stats['errors'] / calls * 100):.1f}%" if calls > 0 else "0%",
+            'avg_time_ms': f"{(self._stats['total_time'] / calls):.2f}" if calls > 0 else "0",
+            'cache_size': len(self._cache)
+        }
+    
+    def clear_cache(self):
+        self._cache.clear()
+        logger.info("Cache cleared")
+        return self
+
+
+if __name__ == "__main__":
+    sol = ${task.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join('').replace(/[^a-zA-Z]/g,'')||'Solution'}(config={'debug': True})
+    result = sol.execute("test input")
+    print(f"Result: {result}")
+    print(f"Stats: {sol.get_stats()}")`}\n\`\`\`\n\nThis gives you a production-quality foundation with caching, error handling, timing, statistics, and logging. Describe the specific logic you need in the \`_process\` / \`_process\` method and I\'ll write the complete implementation.`;
+  }
+
+  _m(text,pats){return pats.some(p=>text.includes(p));}
+  _shuf(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+  getStats(){return{msgs:this.msgs,turns:this.history.length,memories:this.memories.length,topics:[...this.sessionTopics]};}
+  clear(){this.history=[];this.msgs=0;this.sessionTopics=new Set();}
+}
+
+// ════════════════════════════════════
+//   APP CONTROLLER
+// ════════════════════════════════════
+const brain=new DEVEBrain();
+const synth=window.speechSynthesis;
+let recognition=null;
+let bgTasks=0;
+let startTime=Date.now();
+
+// ── CANVAS ──
+const cv=document.getElementById('bgc'),cx=cv.getContext('2d');
+let pts=[];
+function initCv(){
+  cv.width=window.innerWidth;cv.height=window.innerHeight;
+  pts=Array.from({length:60},()=>({x:Math.random()*cv.width,y:Math.random()*cv.height,vx:(Math.random()-.5)*.2,vy:(Math.random()-.5)*.2,r:Math.random()*.9+.3,a:Math.random()}));
+}
+function drawCv(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  pts.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<0)p.x=cv.width;if(p.x>cv.width)p.x=0;
+    if(p.y<0)p.y=cv.height;if(p.y>cv.height)p.y=0;
+    cx.beginPath();cx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    cx.fillStyle=`rgba(0,200,255,${p.a*.15})`;cx.fill();
+  });
+  for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){
+    const d=Math.hypot(pts[i].x-pts[j].x,pts[i].y-pts[j].y);
+    if(d<90){cx.beginPath();cx.moveTo(pts[i].x,pts[i].y);cx.lineTo(pts[j].x,pts[j].y);
+      cx.strokeStyle=`rgba(0,200,255,${(1-d/90)*.038})`;cx.lineWidth=.4;cx.stroke();}
+  }
+  requestAnimationFrame(drawCv);
+}
+window.addEventListener('resize',initCv);
+initCv();drawCv();
+
+// ── CLOCK ──
+setInterval(()=>{
+  const s=Math.floor((Date.now()-startTime)/1000);
+  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+  const full=`${pad(h)}:${pad(m)}:${pad(sec)}`;
+  const short=`${pad(m)}:${pad(sec)}`;
+  document.getElementById('t-uptime').textContent=full;
+  document.getElementById('sb-uptime').textContent=full;
+  document.getElementById('s-up2').textContent=short;
+},1000);
+function pad(n){return String(n).padStart(2,'0');}
+
+// ── BG TASKS ──
+const bgLog=['Monitoring workflows...','Indexing knowledge base...','Running background scan...','Syncing session context...','Optimizing response cache...','Passive intelligence loop...','Analyzing conversation patterns...'];
+let bgI=0;
+setInterval(()=>{
+  bgTasks++;bgI++;
+  document.getElementById('s-bg').textContent=bgTasks;
+  document.getElementById('sb-bg').textContent=bgTasks;
+},16000);
+
+// ── BUILD CAPS ──
+function buildCaps(){
+  const panel=document.getElementById('cap-panel');
+  panel.innerHTML='';
+  CAPS.forEach((cat,ci)=>{
+    const sec=document.createElement('div');
+    sec.className='cap-section'+(ci===0?' open':'');
+    sec.dataset.cat=cat.id;
+    sec.innerHTML=`
+      <div class="cap-hdr" onclick="toggleSection(this.parentElement)">
+        <div class="cap-ico" style="background:${cat.color}15;color:${cat.color}"><svg viewBox="0 0 24 24">${cat.icon}</svg></div>
+        <div class="cap-ttl">${cat.label.toUpperCase()}</div>
+        <div class="cap-cnt">${cat.items.length}</div>
+        <div class="cap-arr">▶</div>
+      </div>
+      <div class="cap-body">${cat.items.map(item=>`
+        <div class="cap-item" data-name="${item.n.toLowerCase()}" onclick="activateCap(${JSON.stringify(item.p)},${JSON.stringify(item.a||'')})">
+          <div class="cap-dot" style="background:${item.s==='ACTIVE'?cat.color:item.s==='PARTIAL'?'#ffd84d':'rgba(150,210,240,.18)'}"></div>
+          <div class="cap-name">${item.n}</div>
+          <div class="cap-st" style="color:${item.s==='ACTIVE'?cat.color:item.s==='PARTIAL'?'#ffd84d':'rgba(150,210,240,.2)'}">${item.s}</div>
+        </div>`).join('')}
+      </div>`;
+    panel.appendChild(sec);
+  });
+}
+
+function toggleSection(sec){sec.classList.toggle('open');}
+
+function activateCap(prompt,action){
+  if(action==='voice'){startVoice();return;}
+  document.getElementById('inp').value=prompt;
+  send();
+}
+
+function filterCaps(query){
+  const q=query.toLowerCase().trim();
+  document.querySelectorAll('.cap-item').forEach(item=>{
+    const name=item.dataset.name||'';
+    item.classList.toggle('hidden',q&&!name.includes(q));
+  });
+  document.querySelectorAll('.cap-section').forEach(sec=>{
+    const visible=sec.querySelectorAll('.cap-item:not(.hidden)').length;
+    sec.style.display=q&&visible===0?'none':'';
+    if(q&&visible>0)sec.classList.add('open');
+  });
+}
+
+// ── ORB ──
+function setOrb(state){
+  const oc=document.getElementById('oc'),ow=document.getElementById('owave'),os=document.getElementById('ostat'),sv=document.getElementById('s-voice');
+  oc.className='oc';ow.className='owave';
+  if(state==='listen'){oc.classList.add('listen');ow.classList.add('listen');os.textContent='LISTENING...';sv.textContent='ACTIVE';document.getElementById('micbtn').classList.add('hot');}
+  else if(state==='think'){oc.classList.add('think');os.textContent='PROCESSING...';document.getElementById('micbtn').classList.remove('hot');}
+  else if(state==='speak'){oc.classList.add('speak');ow.classList.add('speak');os.textContent='SPEAKING...';}
+  else{os.textContent='CLICK TO SPEAK';sv.textContent='READY';document.getElementById('micbtn').classList.remove('hot');}
+}
+
+// ── CHAT ──
+function addUserMsg(text){
+  const feed=document.getElementById('feed');
+  const t=new Date().toLocaleTimeString();
+  const d=document.createElement('div');d.className='msg u';
+  d.innerHTML=`<div class="av u">U</div><div class="mbody"><div class="mmeta">YOU // ${t}</div><div class="bbl u"></div></div>`;
+  d.querySelector('.bbl').textContent=text;
+  feed.appendChild(d);sf();
+}
+
+function addAIMsg(text){
+  return new Promise(resolve=>{
+    const feed=document.getElementById('feed');
+    const t=new Date().toLocaleTimeString();
+    const d=document.createElement('div');d.className='msg';
+    d.innerHTML=`<div class="av ai">D</div><div class="mbody"><div class="mmeta">D.E.V.E // ${t}</div><div class="typing"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div></div></div>`;
+    feed.appendChild(d);sf();
+    const delay=Math.min(400+text.length*1.5,1200);
+    setTimeout(()=>{
+      const bbl=document.createElement('div');bbl.className='bbl ai';
+      renderBubble(bbl,text);
+      d.querySelector('.mbody').replaceChild(bbl,d.querySelector('.typing'));
+      sf();resolve();
+    },delay);
+  });
+}
+
+function renderBubble(el,text){
+  let h=text
+    .replace(/```(\w*)\n?([\s\S]*?)```/g,'<pre>$2</pre>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em style="color:var(--mu)">$1</em>')
+    .replace(/^#{1,3}\s+(.*)/gm,'<span class="section-head">$1</span>')
+    .replace(/\n/g,'<br>');
+  el.innerHTML=h;
+}
+
+function sf(){const f=document.getElementById('feed');f.scrollTop=f.scrollHeight;}
+
+async function send(override){
+  const inp=document.getElementById('inp');
+  const text=override||inp.value.trim();
+  if(!text)return;
+  inp.value='';rsz(inp);
+  addUserMsg(text);
+  setOrb('think');
+  const reply=brain.process(text);
+  // Update UI stats
+  const stats=brain.getStats();
+  document.getElementById('t-msgs').textContent=stats.msgs;
+  document.getElementById('t-mem').textContent=stats.memories;
+  document.getElementById('sb-msgs').textContent=stats.msgs;
+  document.getElementById('s-mem').textContent=stats.turns+' TURNS';
+  // Update memory panel
+  updateMemPanel();
+  await addAIMsg(reply);
+  if(synth){setOrb('speak');speak(reply.replace(/```[\s\S]*?```/g,' code block. ').replace(/[#*`>_]/g,'').substring(0,450),()=>setOrb('idle'));}
+  else setOrb('idle');
+}
+
+function qsend(text){document.getElementById('inp').value=text;send();}
+
+// ── MEMORY PANEL ──
+function updateMemPanel(){
+  const list=document.getElementById('mem-list');
+  if(brain.memories.length===0){list.innerHTML='<div class="mem-item" style="color:var(--mu2)">No memories yet. Tell me something to remember.</div>';return;}
+  list.innerHTML=brain.memories.slice(-8).reverse().map(m=>`<div class="mem-item"><b>${m.fact}</b><br/><span style="color:var(--mu2)">${m.time}</span></div>`).join('');
+}
+
+function toggleMem(){
+  const panel=document.getElementById('mem-panel');
+  panel.classList.toggle('show');
+}
+
+// ── VOICE ──
+function speak(text,done){
+  if(!synth){if(done)done();return;}
+  synth.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.rate=1.05;u.pitch=0.85;u.volume=0.9;
+  const vs=synth.getVoices();
+  const pref=vs.find(v=>v.name.includes('Daniel')||v.name.includes('Google UK English Male')||v.name.includes('Alex')||v.name.includes('Fred'));
+  if(pref)u.voice=pref;
+  u.onend=()=>{if(done)done();};u.onerror=()=>{if(done)done();};
+  synth.speak(u);
+}
+synth?.getVoices();
+
+function startVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){toast('VOICE REQUIRES CHROME OR EDGE BROWSER');return;}
+  if(synth)synth.cancel();
+  setOrb('listen');
+  document.getElementById('vbanner').classList.add('show');
+  document.getElementById('vtxt').textContent='Listening...';
+  recognition=new SR();
+  recognition.continuous=false;recognition.interimResults=true;recognition.lang='en-US';
+  recognition.onresult=e=>{
+    let interim='',final='';
+    for(let r of e.results){if(r.isFinal)final+=r[0].transcript;else interim+=r[0].transcript;}
+    document.getElementById('vtxt').textContent=final||interim||'Listening...';
+    document.getElementById('inp').value=final||interim;
+    if(final)finishVoice(final);
+  };
+  recognition.onerror=e=>{cancelVoice();if(e.error==='not-allowed')toast('MICROPHONE ACCESS DENIED — CHECK PERMISSIONS');};
+  recognition.onend=()=>{const t=document.getElementById('inp').value.trim();if(t)finishVoice(t);else cancelVoice();};
+  try{recognition.start();}catch(e){cancelVoice();}
+}
+function finishVoice(text){
+  document.getElementById('vbanner').classList.remove('show');
+  if(recognition){try{recognition.stop();}catch(e){}recognition=null;}
+  if(text){document.getElementById('inp').value=text;send();}else setOrb('idle');
+}
+function cancelVoice(){
+  document.getElementById('vbanner').classList.remove('show');
+  document.getElementById('micbtn').classList.remove('hot');
+  if(recognition){try{recognition.stop();}catch(e){}recognition=null;}
+  setOrb('idle');
+}
+
+// ── MISC ──
+function railClick(el){document.querySelectorAll('.ri').forEach(r=>r.classList.remove('on'));el.classList.add('on');}
+function clearChat(){
+  brain.clear();
+  document.getElementById('feed').innerHTML='<div class="sysmsg">// <b>SESSION CLEARED</b> — D.E.V.E READY — ALL SYSTEMS NOMINAL //</div>';
+  document.getElementById('t-msgs').textContent='0';document.getElementById('t-mem').textContent='0';
+  document.getElementById('sb-msgs').textContent='0';document.getElementById('s-mem').textContent='0 TURNS';
+  toast('CONVERSATION CLEARED');
+}
+function kdown(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
+function rsz(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,80)+'px';}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+
+// ── INIT ──
+buildCaps();
+synth?.getVoices();
+
+setTimeout(async()=>{
+  await addAIMsg("All systems operational.\n\nD.E.V.E Full AI is online — 100% independent. Zero internet. Zero external AI. Every response is generated by my internal intelligence engine running on your machine.\n\n**What's loaded:**\n• 90+ capabilities across 9 domains\n• Deep knowledge in programming, finance, health, science, business, writing, AI, productivity, and architecture\n• Production-ready code generation in Python, TypeScript, JavaScript, and more\n• Complete plan generators for business, finance, fitness, and content\n• Voice input/output — click MIC or the orb to speak\n• Session memory — tell me facts to remember\n• Searchable capabilities — use the search bar on the right\n\nWhat shall we build today?");
+  setOrb('speak');
+  speak("All systems operational. D.E.V.E Full AI is online and fully independent. Ninety capabilities loaded. What shall we build today?",()=>setOrb('idle'));
+},600);
+</script>
+</body>
+</html>

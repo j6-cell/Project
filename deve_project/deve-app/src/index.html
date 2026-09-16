@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="Content-Security-Policy"
+  content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src http://localhost:11434 http://127.0.0.1:11434; img-src 'self' data:"/>
+<title>D.E.V.E</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+/* ══════════════════════════════════════════
+   D.E.V.E  —  AUTONOMOUS WINDOWS APP
+   Local AI · No Internet Required
+   ══════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --arc:#00c8ff;--green:#00ffaa;--gold:#ffd84d;
+  --red:#ff4060;--violet:#9b6dff;--coral:#ff6b6b;
+  --bg:#020b14;--panel:#060f1a;--panel2:#081828;
+  --b1:rgba(0,200,255,0.09);--b2:rgba(0,200,255,0.22);
+  --text:#c8eeff;--muted:rgba(150,210,240,0.4);
+  --hud:'Share Tech Mono',monospace;
+  --disp:'Orbitron',sans-serif;
+  --body:'Rajdhani',sans-serif;
+}
+
+html,body{height:100%;overflow:hidden;background:var(--bg)}
+body{color:var(--text);font-family:var(--body);font-weight:400;
+  display:flex;flex-direction:column;cursor:default;-webkit-app-region:no-drag}
+
+/* ── SCANLINES ── */
+body::after{content:'';position:fixed;inset:0;z-index:9000;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.05) 2px,rgba(0,0,0,0.05) 4px)}
+
+/* ── CANVAS BG ── */
+#bgc{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* ═══════════════════════
+   CUSTOM TITLEBAR
+   ═══════════════════════ */
+#titlebar{
+  position:relative;z-index:1000;
+  height:36px;flex-shrink:0;
+  display:flex;align-items:center;
+  background:rgba(2,8,16,0.98);
+  border-bottom:1px solid var(--b1);
+  -webkit-app-region:drag; /* draggable */
+  user-select:none;
+}
+.tb-drag{flex:1;display:flex;align-items:center;padding:0 12px;gap:10px;-webkit-app-region:drag}
+.tb-icon{width:14px;height:14px;flex-shrink:0}
+.tb-title{font-family:var(--disp);font-size:9px;font-weight:700;letter-spacing:0.2em;color:var(--arc)}
+.tb-title em{opacity:0.6;font-style:normal}
+.tb-stats{display:flex;gap:14px;font-family:var(--hud);font-size:8px;color:var(--muted);letter-spacing:0.06em}
+.tb-stats b{color:var(--arc)}
+.tb-winbtns{display:flex;-webkit-app-region:no-drag;flex-shrink:0}
+.wbtn{
+  width:46px;height:36px;border:none;background:transparent;
+  color:var(--muted);cursor:pointer;font-size:12px;
+  transition:all 0.15s;display:flex;align-items:center;justify-content:center;
+  font-family:var(--hud);letter-spacing:0.04em;
+}
+.wbtn:hover{background:rgba(0,200,255,0.08);color:var(--arc)}
+.wbtn.close-btn:hover{background:rgba(255,64,96,0.15);color:var(--red)}
+
+/* ═══════════════════════
+   MAIN LAYOUT
+   ═══════════════════════ */
+#app{flex:1;display:grid;grid-template-columns:52px 240px 1fr 256px;overflow:hidden;position:relative;z-index:1}
+
+/* ── ICON RAIL ── */
+#rail{border-right:1px solid var(--b1);background:rgba(3,9,17,0.7);
+  display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:2px;overflow-y:auto}
+#rail::-webkit-scrollbar{display:none}
+.ri{width:38px;height:38px;border-radius:3px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:2px;cursor:pointer;
+  transition:all 0.16s;color:var(--muted);border:1px solid transparent;font-family:var(--hud)}
+.ri:hover,.ri.on{background:rgba(0,200,255,0.07);border-color:var(--b1);color:var(--arc)}
+.ri svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.ri span{font-size:5.5px;letter-spacing:0.04em}
+.rsep{width:26px;height:1px;background:var(--b1);margin:3px 0;flex-shrink:0}
+
+/* ── LEFT PANEL ── */
+#lpanel{border-right:1px solid var(--b1);background:rgba(4,11,20,0.6);
+  display:flex;flex-direction:column;overflow:hidden}
+.lsec{border-bottom:1px solid var(--b1);padding:10px 12px;flex-shrink:0}
+.lsec.grow{flex:1;overflow-y:auto}
+.lsec::-webkit-scrollbar{width:2px}
+.lsec::-webkit-scrollbar-thumb{background:rgba(0,200,255,0.12)}
+
+/* ── LABELS ── */
+.slbl{font-family:var(--hud);font-size:8px;color:var(--muted);letter-spacing:0.12em;
+  margin-bottom:7px;display:flex;align-items:center;gap:4px}
+.slbl::before{content:'//';color:var(--arc);opacity:0.4}
+
+/* ── ORB ── */
+.orb-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px 0 10px}
+.orb{width:68px;height:68px;border-radius:50%;position:relative;cursor:pointer;flex-shrink:0}
+.or{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(0,200,255,0.16);animation:osp 4s linear infinite}
+.or:nth-child(2){inset:-7px;border-color:rgba(0,200,255,0.08);animation-duration:7s;animation-direction:reverse}
+.or:nth-child(3){inset:-15px;border-color:rgba(0,200,255,0.04);animation-duration:12s}
+@keyframes osp{to{transform:rotate(360deg)}}
+.oc{position:absolute;inset:7px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,rgba(0,200,255,0.2),rgba(0,45,90,0.96));
+  border:1px solid rgba(0,200,255,0.3);
+  display:flex;align-items:center;justify-content:center;transition:all 0.3s}
+.oc.listen{background:radial-gradient(circle at 35% 35%,rgba(0,255,170,0.25),rgba(0,55,28,0.96));
+  border-color:rgba(0,255,170,0.45);box-shadow:0 0 22px rgba(0,255,170,0.22);animation:lp 1s ease-in-out infinite}
+.oc.think{background:radial-gradient(circle at 35% 35%,rgba(155,109,255,0.25),rgba(28,0,65,0.96));
+  border-color:rgba(155,109,255,0.45);box-shadow:0 0 22px rgba(155,109,255,0.22);animation:tp 0.55s ease-in-out infinite}
+.oc.speak{background:radial-gradient(circle at 35% 35%,rgba(255,216,77,0.25),rgba(65,38,0,0.96));
+  border-color:rgba(255,216,77,0.45);box-shadow:0 0 22px rgba(255,216,77,0.18)}
+@keyframes lp{0%,100%{box-shadow:0 0 14px rgba(0,255,170,0.2)}50%{box-shadow:0 0 36px rgba(0,255,170,0.5)}}
+@keyframes tp{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+.ol{font-family:var(--disp);font-size:1.1rem;font-weight:900;color:#fff;text-shadow:0 0 10px var(--arc)}
+.os{font-family:var(--hud);font-size:8px;color:var(--muted);text-align:center;letter-spacing:0.1em}
+.owave{display:flex;align-items:center;justify-content:center;gap:2px;height:20px}
+.ow{width:2px;border-radius:99px;background:var(--arc);animation:owv 1.4s ease-in-out infinite}
+@keyframes owv{0%,100%{height:2px;opacity:0.18}50%{height:16px;opacity:0.8}}
+.owave.idle .ow{animation:none;height:2px;opacity:0.12}
+.owave.speak .ow{background:var(--gold)}
+.owave.listen .ow{background:var(--green)}
+
+/* ── DATA ── */
+.drows{display:flex;flex-direction:column;gap:4px}
+.dr{display:flex;justify-content:space-between;font-family:var(--hud);font-size:9px;
+  border-bottom:1px solid rgba(0,200,255,0.04);padding-bottom:4px}
+.dr:last-child{border:none}
+.dk{color:var(--muted)}.dv{color:var(--arc)}
+.dv.g{color:var(--green)}.dv.y{color:var(--gold)}.dv.r{color:var(--red)}
+
+/* ── PROG ── */
+.progs{display:flex;flex-direction:column;gap:5px}
+.pgr{display:flex;flex-direction:column;gap:2px}
+.pgh{display:flex;justify-content:space-between;font-family:var(--hud);font-size:8px}
+.pgk{color:var(--muted)}.pgv{color:var(--arc)}
+.pgt{height:2px;background:rgba(0,200,255,0.06)}
+.pgf{height:100%;position:relative;transition:width 1.5s ease}
+.pgf::after{content:'';position:absolute;right:0;top:0;height:100%;width:3px;background:#fff;opacity:0.5;filter:blur(1px)}
+
+/* ── AI STATUS BADGE ── */
+.ai-badge{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(0,200,255,0.05);border:1px solid var(--b1);
+  border-radius:2px;padding:6px 8px;margin-bottom:8px;
+}
+.ai-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.ai-name{font-family:var(--hud);font-size:9px;color:var(--text)}
+.ai-sub{font-family:var(--hud);font-size:7px;color:var(--muted)}
+
+/* ── CENTER CHAT ── */
+#center{display:flex;flex-direction:column;overflow:hidden;background:rgba(2,7,14,0.5)}
+#feed{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:9px}
+#feed::-webkit-scrollbar{width:2px}
+#feed::-webkit-scrollbar-thumb{background:rgba(0,200,255,0.12);border-radius:9px}
+.msg{display:flex;gap:7px;animation:mi 0.22s ease}
+@keyframes mi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.msg.u{flex-direction:row-reverse}
+.av{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;
+  justify-content:center;font-family:var(--disp);font-size:6.5px;font-weight:700;border:1px solid;margin-top:2px}
+.av.ai{background:rgba(0,200,255,0.07);color:var(--arc);border-color:rgba(0,200,255,0.22)}
+.av.u{background:rgba(155,109,255,0.07);color:var(--violet);border-color:rgba(155,109,255,0.22)}
+.mbody{max-width:84%;display:flex;flex-direction:column;gap:2px}
+.msg.u .mbody{align-items:flex-end}
+.mmeta{font-family:var(--hud);font-size:7px;color:var(--muted)}
+.bbl{padding:8px 11px;border-radius:2px;font-size:13px;line-height:1.65;
+  font-family:var(--body);white-space:pre-wrap;word-break:break-word}
+.bbl.ai{background:rgba(0,200,255,0.04);border:1px solid var(--b1);border-left:2px solid var(--arc)}
+.bbl.u{background:rgba(155,109,255,0.05);border:1px solid rgba(155,109,255,0.16);
+  border-right:2px solid var(--violet);text-align:right}
+.bbl.streaming::after{content:'▋';animation:cur 0.65s step-end infinite;color:var(--arc)}
+@keyframes cur{0%,100%{opacity:1}50%{opacity:0}}
+.bbl pre{background:rgba(0,0,0,0.45);border:1px solid rgba(0,200,255,0.1);
+  border-radius:2px;padding:9px;margin:5px 0;font-family:var(--hud);font-size:11px;
+  overflow-x:auto;white-space:pre;color:#00ffaa}
+.bbl code{font-family:var(--hud);font-size:11px;color:#00ffaa;background:rgba(0,255,170,0.05);padding:1px 4px;border-radius:2px}
+.sysmsg{font-family:var(--hud);font-size:9px;color:var(--muted);text-align:center;
+  padding:5px;letter-spacing:0.06em;border-top:1px solid rgba(0,200,255,0.04);
+  border-bottom:1px solid rgba(0,200,255,0.04)}
+.sysmsg b{color:var(--arc)}
+
+/* ── INPUT ── */
+#ibar{border-top:1px solid var(--b1);padding:8px 12px;display:flex;gap:6px;align-items:flex-end;
+  background:rgba(2,8,16,0.95);backdrop-filter:blur(16px);flex-shrink:0}
+#inp{flex:1;background:rgba(0,200,255,0.03);border:1px solid var(--b1);border-radius:2px;
+  padding:7px 11px;color:var(--text);font-family:var(--hud);font-size:12px;
+  outline:none;resize:none;min-height:32px;max-height:88px;transition:border-color 0.2s;letter-spacing:0.02em}
+#inp::placeholder{color:var(--muted)}
+#inp:focus{border-color:rgba(0,200,255,0.26)}
+.ibtn{height:32px;padding:0 12px;background:transparent;border:1px solid var(--b1);border-radius:2px;
+  color:var(--muted);font-family:var(--hud);font-size:9px;cursor:pointer;
+  letter-spacing:0.06em;transition:all 0.18s;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.ibtn:hover{border-color:var(--arc);color:var(--arc)}
+.ibtn.primary{border-color:rgba(0,200,255,0.32);color:var(--arc)}
+.ibtn.primary:hover{background:rgba(0,200,255,0.08)}
+.ibtn.mic{transition:all 0.2s}
+.ibtn.mic.hot{border-color:var(--green);color:var(--green);background:rgba(0,255,170,0.05);
+  animation:mh 1s ease-in-out infinite}
+@keyframes mh{0%,100%{box-shadow:0 0 0 0 rgba(0,255,170,0.3)}50%{box-shadow:0 0 0 4px rgba(0,255,170,0)}}
+.ibtn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.5}
+
+/* ── RIGHT PANEL ── */
+#rpanel{border-left:1px solid var(--b1);background:rgba(4,11,20,0.6);
+  display:flex;flex-direction:column;overflow:hidden}
+.rptabs{display:flex;border-bottom:1px solid var(--b1);flex-shrink:0}
+.rpt{flex:1;padding:8px 0;text-align:center;font-family:var(--hud);font-size:7.5px;
+  letter-spacing:0.08em;color:var(--muted);cursor:pointer;transition:all 0.18s;
+  border-bottom:1px solid transparent}
+.rpt:hover{color:var(--text)}
+.rpt.on{color:var(--arc);border-bottom-color:var(--arc)}
+.rpbody{flex:1;overflow-y:auto;padding:10px 11px}
+.rpbody::-webkit-scrollbar{width:2px}
+.rpbody::-webkit-scrollbar-thumb{background:rgba(0,200,255,0.1);border-radius:9px}
+
+/* model card */
+.model-card{border:1px solid var(--b1);border-radius:2px;padding:9px 10px;margin-bottom:6px;cursor:pointer;transition:all 0.16s;background:rgba(0,200,255,0.015)}
+.model-card:hover{border-color:rgba(0,200,255,0.25);background:rgba(0,200,255,0.04)}
+.model-card.active{border-color:rgba(0,200,255,0.35);background:rgba(0,200,255,0.07)}
+.mc-name{font-family:var(--hud);font-size:10px;color:var(--text);margin-bottom:3px}
+.mc-desc{font-family:var(--hud);font-size:8px;color:var(--muted);line-height:1.5}
+.mc-tag{display:inline-block;font-family:var(--hud);font-size:7px;
+  border:1px solid var(--b1);border-radius:1px;padding:1px 4px;color:var(--muted);margin-top:4px;margin-right:2px}
+.mc-tag.green{border-color:rgba(0,255,170,0.25);color:var(--green)}
+.mc-tag.gold{border-color:rgba(255,216,77,0.25);color:var(--gold)}
+
+/* quick cmds */
+.qlist{display:flex;flex-direction:column;gap:4px}
+.qcmd{border:1px solid var(--b1);border-radius:2px;padding:6px 8px;font-family:var(--hud);
+  font-size:9px;color:var(--muted);cursor:pointer;transition:all 0.15s;
+  display:flex;align-items:flex-start;gap:5px}
+.qcmd:hover{border-color:var(--arc);color:var(--arc);background:rgba(0,200,255,0.03)}
+.qp{color:var(--arc);opacity:0.55;flex-shrink:0}
+
+/* settings form */
+.sf-group{margin-bottom:14px}
+.sf-label{font-family:var(--hud);font-size:8px;color:var(--muted);letter-spacing:0.1em;margin-bottom:5px}
+.sf-input{width:100%;background:rgba(0,200,255,0.03);border:1px solid var(--b1);
+  border-radius:2px;padding:7px 10px;color:var(--text);font-family:var(--hud);
+  font-size:10px;outline:none;transition:border-color 0.18s}
+.sf-input:focus{border-color:rgba(0,200,255,0.28)}
+.sf-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.sf-row-label{font-family:var(--hud);font-size:9px;color:var(--text)}
+.sftog{width:30px;height:14px;border-radius:99px;border:1px solid var(--b1);
+  cursor:pointer;position:relative;background:transparent;flex-shrink:0;transition:all 0.2s}
+.sftog.on{background:rgba(0,200,255,0.1);border-color:rgba(0,200,255,0.32)}
+.sftog::after{content:'';position:absolute;top:1px;left:1px;width:10px;height:10px;
+  border-radius:50%;background:var(--muted);transition:all 0.2s}
+.sftog.on::after{left:17px;background:var(--arc)}
+.sf-btn{width:100%;padding:7px;background:rgba(0,200,255,0.06);border:1px solid rgba(0,200,255,0.28);
+  border-radius:2px;color:var(--arc);font-family:var(--hud);font-size:9px;cursor:pointer;
+  letter-spacing:0.08em;transition:all 0.18s;margin-top:4px}
+.sf-btn:hover{background:rgba(0,200,255,0.12)}
+.sf-btn.red-btn{background:rgba(255,64,96,0.05);border-color:rgba(255,64,96,0.25);color:var(--red)}
+.sf-btn.red-btn:hover{background:rgba(255,64,96,0.1)}
+.sf-note{font-family:var(--hud);font-size:8px;color:var(--muted);line-height:1.55;margin-top:5px}
+
+/* auto items */
+.autolist{display:flex;flex-direction:column;gap:4px}
+.autoitem{border:1px solid var(--b1);border-radius:2px;padding:7px 8px;
+  display:flex;justify-content:space-between;align-items:center}
+.ailabel{font-family:var(--hud);font-size:9px;color:var(--text)}
+.aistat{font-family:var(--hud);font-size:7px;margin-top:2px}
+.aistat.run{color:var(--green)}.aistat.idle{color:var(--muted)}
+.aitog{width:26px;height:12px;border-radius:99px;border:1px solid var(--b1);
+  cursor:pointer;position:relative;background:transparent;flex-shrink:0;transition:all 0.2s}
+.aitog.on{background:rgba(0,255,170,0.1);border-color:rgba(0,255,170,0.35)}
+.aitog::after{content:'';position:absolute;top:1px;left:1px;width:8px;height:8px;
+  border-radius:50%;background:var(--muted);transition:all 0.2s}
+.aitog.on::after{left:15px;background:var(--green)}
+
+/* ── VOICE OVERLAY ── */
+#vover{display:none;position:fixed;inset:0;z-index:5000;
+  background:rgba(0,0,0,0.72);backdrop-filter:blur(8px);
+  align-items:center;justify-content:center}
+#vover.open{display:flex}
+.vo-inner{background:var(--panel);border:1px solid rgba(0,255,170,0.28);
+  border-radius:4px;padding:26px 32px;width:300px;
+  display:flex;flex-direction:column;align-items:center;gap:11px;
+  box-shadow:0 0 50px rgba(0,255,170,0.06)}
+.vo-orb{width:64px;height:64px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,rgba(0,255,170,0.22),rgba(0,45,22,0.97));
+  border:1px solid rgba(0,255,170,0.38);display:flex;align-items:center;justify-content:center;
+  animation:lp 1s ease-in-out infinite}
+.vo-label{font-family:var(--disp);font-size:8px;font-weight:700;letter-spacing:0.2em;color:var(--green)}
+#votext{font-family:var(--hud);font-size:11px;color:var(--text);text-align:center;min-height:15px;letter-spacing:0.03em}
+.vo-wave{display:flex;align-items:center;gap:3px;height:28px}
+.vow{width:3px;border-radius:99px;background:var(--green);animation:owv 1.4s ease-in-out infinite}
+.vo-cancel{background:transparent;border:1px solid rgba(255,64,96,0.28);border-radius:2px;
+  padding:5px 14px;font-family:var(--hud);font-size:9px;color:var(--red);cursor:pointer;
+  transition:all 0.18s;letter-spacing:0.06em}
+.vo-cancel:hover{border-color:var(--red);background:rgba(255,64,96,0.06)}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:48px;left:50%;transform:translateX(-50%) translateY(14px);
+  background:rgba(0,200,255,0.07);border:1px solid rgba(0,200,255,0.22);border-radius:2px;
+  padding:5px 14px;font-family:var(--hud);font-size:9px;color:var(--arc);
+  z-index:9999;opacity:0;transition:all 0.28s;pointer-events:none;letter-spacing:0.06em;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── OLLAMA STATUS BAR ── */
+#ollamabar{
+  height:22px;flex-shrink:0;border-top:1px solid var(--b1);
+  background:rgba(2,8,16,0.96);display:flex;align-items:center;
+  padding:0 12px;gap:16px;font-family:var(--hud);font-size:8px;color:var(--muted);letter-spacing:0.06em;
+}
+.ob-item{display:flex;align-items:center;gap:4px}
+.ob-dot{width:5px;height:5px;border-radius:50%}
+
+/* ── CORNERS ── */
+.cm{position:relative}
+.cm::before,.cm::after{content:'';position:absolute;width:7px;height:7px;
+  border-color:rgba(0,200,255,0.18);border-style:solid;pointer-events:none}
+.cm::before{top:3px;left:3px;border-width:1px 0 0 1px}
+.cm::after{bottom:3px;right:3px;border-width:0 1px 1px 0}
+
+@media(max-width:900px){
+  #app{grid-template-columns:1fr}
+  #rail,#lpanel,#rpanel{display:none}
+}
+</style>
+</head>
+<body>
+
+<canvas id="bgc"></canvas>
+
+<!-- ══ CUSTOM TITLEBAR ══ -->
+<div id="titlebar">
+  <div class="tb-drag">
+    <svg class="tb-icon" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="#00c8ff" stroke-opacity="0.4"/><text x="7" y="10.5" font-size="7" text-anchor="middle" fill="#00c8ff" font-family="monospace" font-weight="bold">D</text></svg>
+    <div class="tb-title">D.E.V.<em>E</em></div>
+    <div style="width:1px;height:14px;background:var(--b1);flex-shrink:0"></div>
+    <div class="tb-stats">
+      <div class="ob-item"><span>STATUS</span> <b id="ts-status">ONLINE</b></div>
+      <div class="ob-item"><span>MODEL</span> <b id="ts-model">—</b></div>
+      <div class="ob-item"><span>MSGS</span> <b id="ts-msgs">0</b></div>
+      <div class="ob-item"><span>BG</span> <b id="ts-bg">0</b></div>
+    </div>
+  </div>
+  <div class="tb-winbtns">
+    <button class="wbtn" onclick="window.deve?.minimize()" title="Minimize">─</button>
+    <button class="wbtn" onclick="window.deve?.maximize()" title="Maximize / Restore">□</button>
+    <button class="wbtn close-btn" onclick="window.deve?.hide()" title="Hide to tray (stays running)">✕</button>
+  </div>
+</div>
+
+<!-- ══ MAIN ══ -->
+<div id="app">
+
+  <!-- RAIL -->
+  <div id="rail">
+    <div class="ri on" title="Chat" onclick="railClick(this)"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>CHAT</span></div>
+    <div class="ri" title="Code" onclick="railQ('Write me complete, production-ready code. What should I build?')"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg><span>CODE</span></div>
+    <div class="ri" title="Design" onclick="railQ('Help me design something — branding, UI, concepts, or visual strategy.')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span>STUDIO</span></div>
+    <div class="ri" title="Finance" onclick="railQ('Give me a comprehensive financial analysis or investment strategy.')"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span>FIN</span></div>
+    <div class="ri" title="Write" onclick="railQ('Help me write something — email, essay, script, report, or content.')"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span>WRITE</span></div>
+    <div class="ri" title="Research" onclick="railQ('Research this topic and give me a thorough, structured briefing.')"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span>SEARCH</span></div>
+    <div class="ri" title="Plan" onclick="railQ('Create a strategic plan, roadmap, or execution framework for my goal.')"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>PLAN</span></div>
+    <div class="rsep"></div>
+    <div class="ri" title="Learn" onclick="railQ('Teach me something — explain a concept deeply with examples and exercises.')"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>LEARN</span></div>
+    <div class="ri" title="Auto" onclick="railQ('Help me automate a workflow or repetitive task.')"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span>AUTO</span></div>
+  </div>
+
+  <!-- LEFT PANEL -->
+  <div id="lpanel" class="cm">
+    <div class="lsec">
+      <div class="slbl">CORE AI</div>
+      <div class="orb-wrap">
+        <div class="orb" onclick="startVoice()" title="Click to speak">
+          <div class="or"></div><div class="or"></div><div class="or"></div>
+          <div class="oc" id="oc"><div class="ol">D</div></div>
+        </div>
+        <div class="os" id="os">CLICK TO SPEAK</div>
+        <div class="owave idle" id="ow">
+          <div class="ow" style="animation-delay:.00s"></div><div class="ow" style="animation-delay:.10s"></div>
+          <div class="ow" style="animation-delay:.20s"></div><div class="ow" style="animation-delay:.05s"></div>
+          <div class="ow" style="animation-delay:.15s"></div><div class="ow" style="animation-delay:.25s"></div>
+          <div class="ow" style="animation-delay:.08s"></div><div class="ow" style="animation-delay:.18s"></div>
+        </div>
+      </div>
+    </div>
+    <div class="lsec">
+      <div class="slbl">SYSTEM</div>
+      <div class="drows">
+        <div class="dr"><span class="dk">LOCAL AI</span><span class="dv g" id="s-ai">CHECKING...</span></div>
+        <div class="dr"><span class="dk">MODEL</span><span class="dv" id="s-model">—</span></div>
+        <div class="dr"><span class="dk">BACKGROUND</span><span class="dv g" id="s-bg">ACTIVE</span></div>
+        <div class="dr"><span class="dk">VOICE</span><span class="dv" id="s-voice">READY</span></div>
+        <div class="dr"><span class="dk">MEMORY</span><span class="dv" id="s-mem">0 TURNS</span></div>
+        <div class="dr"><span class="dk">MESSAGES</span><span class="dv" id="s-msgs">0</span></div>
+      </div>
+    </div>
+    <div class="lsec grow">
+      <div class="slbl">MODULES</div>
+      <div class="progs">
+        <div class="pgr"><div class="pgh"><span class="pgk">UP DEV</span><span class="pgv">READY</span></div><div class="pgt"><div class="pgf" style="width:78%;background:linear-gradient(90deg,#00ffaa,#0af)"></div></div></div>
+        <div class="pgr"><div class="pgh"><span class="pgk">UP STUDIO</span><span class="pgv">READY</span></div><div class="pgt"><div class="pgf" style="width:72%;background:linear-gradient(90deg,#0af,#9b6dff)"></div></div></div>
+        <div class="pgr"><div class="pgh"><span class="pgk">UP FLOW</span><span class="pgv">ACTIVE</span></div><div class="pgt"><div class="pgf" style="width:100%;background:linear-gradient(90deg,#ffd84d,#ff8c42)"></div></div></div>
+        <div class="pgr"><div class="pgh"><span class="pgk">UP FINANCE</span><span class="pgv">READY</span></div><div class="pgt"><div class="pgf" style="width:65%;background:linear-gradient(90deg,#00ffaa,#4f8fff)"></div></div></div>
+        <div class="pgr"><div class="pgh"><span class="pgk">UP VOICE</span><span class="pgv" id="vm">STANDBY</span></div><div class="pgt"><div class="pgf" style="width:28%;background:linear-gradient(90deg,#ff6b6b,#ffd84d)"></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER CHAT -->
+  <div id="center" class="cm">
+    <div id="feed">
+      <div class="sysmsg">// <b>D.E.V.E AUTONOMOUS SYSTEM ONLINE</b> — LOCAL AI ACTIVE — NO INTERNET REQUIRED //</div>
+    </div>
+    <div id="ibar">
+      <button class="ibtn mic" id="micbtn" onclick="startVoice()">
+        <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        MIC
+      </button>
+      <textarea id="inp" rows="1" placeholder='Ask D.E.V.E anything... (Enter to send)'
+        onkeydown="kdown(event)" oninput="rsz(this)"></textarea>
+      <button class="ibtn primary" onclick="send()">SEND ▶</button>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="rpanel" class="cm">
+    <div class="rptabs">
+      <div class="rpt on" onclick="rptab('models',this)">MODELS</div>
+      <div class="rpt" onclick="rptab('cmds',this)">COMMANDS</div>
+      <div class="rpt" onclick="rptab('auto',this)">AUTO</div>
+      <div class="rpt" onclick="rptab('config',this)">CONFIG</div>
+    </div>
+
+    <!-- MODELS -->
+    <div class="rpbody" id="rp-models">
+      <div class="slbl" style="margin-bottom:8px">LOCAL AI MODELS</div>
+      <div class="ai-badge">
+        <div class="ai-dot" id="ollama-dot" style="background:var(--muted)"></div>
+        <div><div class="ai-name" id="ollama-status">Checking Ollama...</div>
+        <div class="ai-sub">Local AI engine — zero internet</div></div>
+      </div>
+      <div id="model-list"></div>
+      <div style="margin-top:10px">
+        <div class="slbl">INSTALL MODELS</div>
+        <div class="qlist" id="install-list"></div>
+      </div>
+    </div>
+
+    <!-- COMMANDS -->
+    <div class="rpbody" id="rp-cmds" style="display:none">
+      <div class="slbl" style="margin-bottom:8px">QUICK COMMANDS</div>
+      <div class="qlist">
+        <div class="qcmd" onclick="railQ('Write production-ready code for a full REST API with authentication and database integration')"><span class="qp">▶</span>Build REST API</div>
+        <div class="qcmd" onclick="railQ('Create a complete React component with TypeScript, hooks, and styling')"><span class="qp">▶</span>React component</div>
+        <div class="qcmd" onclick="railQ('Debug the following code and explain every fix with reasoning:')"><span class="qp">▶</span>Debug my code</div>
+        <div class="qcmd" onclick="railQ('Write a compelling short story with vivid characters and an unexpected twist')"><span class="qp">▶</span>Write a story</div>
+        <div class="qcmd" onclick="railQ('Create a 30-day viral social media content plan with hooks, captions, and posting schedule')"><span class="qp">▶</span>30-day content plan</div>
+        <div class="qcmd" onclick="railQ('Analyze this business idea and give me a full startup plan with market analysis, MVP, and monetization')"><span class="qp">▶</span>Startup business plan</div>
+        <div class="qcmd" onclick="railQ('Create a comprehensive personal finance plan with budget, savings, investments, and passive income')"><span class="qp">▶</span>Personal finance plan</div>
+        <div class="qcmd" onclick="railQ('Design a complete brand identity: logo concept, color palette, typography, and brand voice guide')"><span class="qp">▶</span>Full brand identity</div>
+        <div class="qcmd" onclick="railQ('Explain this concept in depth with examples, analogies, and practical exercises:')"><span class="qp">▶</span>Deep explanation</div>
+        <div class="qcmd" onclick="railQ('Write the most persuasive professional email for my situation with subject line and CTA:')"><span class="qp">▶</span>Perfect email</div>
+        <div class="qcmd" onclick="railQ('Create a 12-week progressive workout and nutrition plan optimized for my goals')"><span class="qp">▶</span>Fitness & nutrition plan</div>
+        <div class="qcmd" onclick="railQ('Build an automation script to handle this repetitive task:')"><span class="qp">▶</span>Automate a task</div>
+        <div class="qcmd" onclick="railQ('Create a detailed architectural floor plan concept with smart home features and sustainability notes')"><span class="qp">▶</span>Architecture blueprint</div>
+        <div class="qcmd" onclick="railQ('Generate a full game design document for a mobile game with mechanics, levels, and monetization')"><span class="qp">▶</span>Game design doc</div>
+      </div>
+    </div>
+
+    <!-- AUTO -->
+    <div class="rpbody" id="rp-auto" style="display:none">
+      <div class="slbl" style="margin-bottom:8px">BACKGROUND AUTOMATIONS</div>
+      <div class="autolist" id="autolist"></div>
+    </div>
+
+    <!-- CONFIG -->
+    <div class="rpbody" id="rp-config" style="display:none">
+      <div class="slbl" style="margin-bottom:8px">CONFIGURATION</div>
+
+      <div class="sf-group">
+        <div class="sf-label">OLLAMA ENDPOINT</div>
+        <input class="sf-input" id="cfg-endpoint" value="http://localhost:11434" placeholder="http://localhost:11434"/>
+        <div class="sf-note">Default local Ollama address. Change if running on a different port or remote machine.</div>
+      </div>
+
+      <div class="sf-group">
+        <div class="sf-label">AI PERSONALITY</div>
+        <input class="sf-input" id="cfg-persona" placeholder="e.g. Formal like JARVIS / Casual / Ultra-concise"/>
+        <div class="sf-note">Customize D.E.V.E's tone and response style</div>
+      </div>
+
+      <div class="sf-group">
+        <div class="sf-label">VOICE & BACKGROUND</div>
+        <div class="sf-row"><span class="sf-row-label">Text-to-speech</span><div class="sftog on" id="tog-tts" onclick="togSetting('tts')"></div></div>
+        <div class="sf-row"><span class="sf-row-label">Background operation</span><div class="sftog on" id="tog-bg" onclick="togSetting('bg')"></div></div>
+        <div class="sf-row"><span class="sf-row-label">Desktop notifications</span><div class="sftog" id="tog-notif" onclick="togSetting('notif')"></div></div>
+        <div class="sf-row"><span class="sf-row-label">Wake word ("Hey DEVE")</span><div class="sftog" id="tog-wake" onclick="togSetting('wake')"></div></div>
+      </div>
+
+      <button class="sf-btn" onclick="saveConfig()">SAVE CONFIGURATION ▶</button>
+      <div style="height:6px"></div>
+      <button class="sf-btn" onclick="clearSession()">CLEAR CONVERSATION</button>
+      <div style="height:6px"></div>
+      <button class="sf-btn red-btn" onclick="window.deve?.quit()">QUIT D.E.V.E</button>
+
+      <div style="margin-top:14px;border-top:1px solid var(--b1);padding-top:10px">
+        <div class="slbl">HOW TO INSTALL OLLAMA</div>
+        <div class="sf-note">
+          1. Visit <b style="color:var(--arc)">ollama.ai</b> and download for Windows<br/>
+          2. Install and run Ollama<br/>
+          3. Open Command Prompt and run:<br/>
+          <code style="color:var(--green)">ollama pull llama3</code><br/>
+          4. D.E.V.E will auto-connect — no internet needed after that<br/><br/>
+          Recommended free models:<br/>
+          • <b style="color:var(--arc)">llama3</b> — Best all-round (4.7GB)<br/>
+          • <b style="color:var(--arc)">mistral</b> — Fast and smart (4.1GB)<br/>
+          • <b style="color:var(--arc)">gemma2</b> — Google's model (5.4GB)<br/>
+          • <b style="color:var(--arc)">phi3</b> — Tiny but capable (2.2GB)<br/>
+          • <b style="color:var(--arc)">codellama</b> — Best for coding (3.8GB)
+        </div>
+        <button class="sf-btn" onclick="window.deve?.openUrl('https://ollama.ai')" style="margin-top:8px">OPEN OLLAMA.AI ↗</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- STATUS BAR -->
+<div id="ollamabar">
+  <div class="ob-item"><div class="ob-dot" id="ob-dot" style="background:var(--muted)"></div><span>OLLAMA</span> <b id="ob-status" style="color:var(--muted)">CHECKING</b></div>
+  <div class="ob-item"><span>MODEL</span> <b id="ob-model" style="color:var(--arc)">—</b></div>
+  <div class="ob-item"><span>UPTIME</span> <b id="ob-uptime" style="color:var(--arc)">00:00:00</b></div>
+  <div class="ob-item"><span>BG TASKS</span> <b id="ob-bgtasks" style="color:var(--gold)">0</b></div>
+  <div style="flex:1"></div>
+  <div class="ob-item" style="color:rgba(0,200,255,0.2)">D.E.V.E v1.0 — 100% LOCAL AI — ZERO INTERNET REQUIRED</div>
+</div>
+
+<!-- VOICE OVERLAY -->
+<div id="vover">
+  <div class="vo-inner">
+    <div class="vo-orb"><div style="font-family:var(--disp);font-size:1.1rem;font-weight:900;color:#00ffaa;text-shadow:0 0 10px var(--green)">D</div></div>
+    <div class="vo-label" id="vo-lbl">LISTENING</div>
+    <div id="votext">Say your command...</div>
+    <div class="vo-wave">
+      <div class="vow" style="animation-delay:.00s"></div><div class="vow" style="animation-delay:.10s"></div>
+      <div class="vow" style="animation-delay:.20s"></div><div class="vow" style="animation-delay:.05s"></div>
+      <div class="vow" style="animation-delay:.15s"></div><div class="vow" style="animation-delay:.25s"></div>
+      <div class="vow" style="animation-delay:.08s"></div><div class="vow" style="animation-delay:.18s"></div>
+    </div>
+    <button class="vo-cancel" onclick="cancelVoice()">✕ CANCEL</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+/* ════════════════════════════════════════
+   D.E.V.E CORE — LOCAL AI SYSTEM
+   Powered by Ollama (100% offline)
+   ════════════════════════════════════════ */
+
+const S = {
+  ollamaEndpoint: localStorage.getItem('deve_endpoint') || 'http://localhost:11434',
+  selectedModel: localStorage.getItem('deve_model') || '',
+  conversation: [],
+  msgs: 0, bgTasks: 0,
+  ollamaOnline: false,
+  settings: JSON.parse(localStorage.getItem('deve_settings')||'{"tts":true,"bg":true,"notif":false,"wake":false}'),
+  persona: localStorage.getItem('deve_persona')||'',
+  startTime: Date.now(),
+  recognition: null,
+  synth: window.speechSynthesis,
+};
+
+/* ── BACKGROUND CANVAS ── */
+const cv = document.getElementById('bgc');
+const cx = cv.getContext('2d');
+let pts = [];
+function initCv(){
+  cv.width=window.innerWidth; cv.height=window.innerHeight;
+  pts = Array.from({length:55},()=>({
+    x:Math.random()*cv.width, y:Math.random()*cv.height,
+    vx:(Math.random()-.5)*.25, vy:(Math.random()-.5)*.25,
+    r:Math.random()*1.1+.3, a:Math.random()
+  }));
+}
+function drawCv(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  pts.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.x<0)p.x=cv.width; if(p.x>cv.width)p.x=0;
+    if(p.y<0)p.y=cv.height; if(p.y>cv.height)p.y=0;
+    cx.beginPath(); cx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    cx.fillStyle=`rgba(0,200,255,${p.a*.25})`; cx.fill();
+  });
+  for(let i=0;i<pts.length;i++) for(let j=i+1;j<pts.length;j++){
+    const d=Math.hypot(pts[i].x-pts[j].x,pts[i].y-pts[j].y);
+    if(d<90){cx.beginPath();cx.moveTo(pts[i].x,pts[i].y);cx.lineTo(pts[j].x,pts[j].y);
+      cx.strokeStyle=`rgba(0,200,255,${(1-d/90)*.05})`;cx.lineWidth=.4;cx.stroke();}
+  }
+  requestAnimationFrame(drawCv);
+}
+window.addEventListener('resize',initCv);
+initCv(); drawCv();
+
+/* ── CLOCK ── */
+setInterval(()=>{
+  const s=Math.floor((Date.now()-S.startTime)/1000);
+  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+  const str=`${pad(h)}:${pad(m)}:${pad(sec)}`;
+  document.getElementById('ob-uptime').textContent=str;
+},1000);
+function pad(n){return String(n).padStart(2,'0')}
+
+/* ── BACKGROUND LOOP ── */
+const bgTasks=['Monitoring workflows...','Indexing AI context...','Scanning for optimizations...',
+  'Running scheduled routines...','Compressing memory...','Updating automation status...','Passive intelligence scan...'];
+let bgIdx=0;
+setInterval(()=>{
+  if(!S.settings.bg) return;
+  S.bgTasks++;
+  bgIdx++;
+  document.getElementById('ob-bgtasks').textContent=S.bgTasks;
+  document.getElementById('ts-bg').textContent=S.bgTasks;
+  window.deve?.onBgUpdate?.({count:S.bgTasks,task:bgTasks[bgIdx%bgTasks.length]});
+},10000);
+
+/* ── ELECTRON EVENTS ── */
+window.deve?.onFocusInput?.(()=>{ document.getElementById('inp').focus(); });
+window.deve?.onBgUpdate?.(data=>{
+  document.getElementById('ob-bgtasks').textContent=data.count;
+  document.getElementById('ts-bg').textContent=data.count;
+});
+
+/* ── OLLAMA ── */
+async function checkOllama(){
+  try{
+    const r=await fetch(`${S.ollamaEndpoint}/api/tags`,{signal:AbortSignal.timeout(3000)});
+    if(!r.ok) throw new Error();
+    const d=await r.json();
+    S.ollamaOnline=true;
+    const models=d.models||[];
+    updateOllamaUI(true,models);
+    if(models.length>0 && !S.selectedModel){
+      S.selectedModel=models[0].name;
+      localStorage.setItem('deve_model',S.selectedModel);
+    }
+    return models;
+  }catch(e){
+    S.ollamaOnline=false;
+    updateOllamaUI(false,[]);
+    return [];
+  }
+}
+
+function updateOllamaUI(online,models){
+  const dot=document.getElementById('ollama-dot');
+  const stat=document.getElementById('ollama-status');
+  const obDot=document.getElementById('ob-dot');
+  const obStat=document.getElementById('ob-status');
+  const obModel=document.getElementById('ob-model');
+  const tsModel=document.getElementById('ts-model');
+  const sAI=document.getElementById('s-ai');
+  const sModel=document.getElementById('s-model');
+
+  if(online){
+    dot.style.background='var(--green)';
+    stat.textContent='Ollama connected — '+models.length+' model'+(models.length!==1?'s':'')+' available';
+    obDot.style.background='var(--green)';
+    obStat.style.color='var(--green)'; obStat.textContent='ONLINE';
+    sAI.textContent='ONLINE'; sAI.className='dv g';
+    buildModelList(models);
+  } else {
+    dot.style.background='var(--red)';
+    stat.textContent='Ollama offline — see Config tab to install';
+    obDot.style.background='var(--red)';
+    obStat.style.color='var(--red)'; obStat.textContent='OFFLINE';
+    sAI.textContent='OFFLINE'; sAI.className='dv r';
+    buildModelList([]);
+  }
+
+  const mdl=S.selectedModel||'—';
+  obModel.textContent=mdl; tsModel.textContent=mdl.split(':')[0];
+  sModel.textContent=mdl;
+}
+
+function buildModelList(models){
+  const list=document.getElementById('model-list');
+  list.innerHTML='';
+  if(models.length===0){
+    list.innerHTML='<div style="font-family:var(--hud);font-size:9px;color:var(--muted);padding:8px 0">No models installed. See Config tab for setup guide.</div>';
+    return;
+  }
+  models.forEach(m=>{
+    const div=document.createElement('div');
+    div.className='model-card'+(m.name===S.selectedModel?' active':'');
+    const size=m.size?Math.round(m.size/1e9*10)/10+'GB':'?';
+    div.innerHTML=`<div class="mc-name">${m.name}</div>
+      <div class="mc-desc">Local · ${size} · Zero internet</div>
+      <span class="mc-tag green">LOCAL</span><span class="mc-tag">OFFLINE</span>`;
+    div.onclick=()=>{
+      S.selectedModel=m.name;
+      localStorage.setItem('deve_model',m.name);
+      document.querySelectorAll('.model-card').forEach(c=>c.classList.remove('active'));
+      div.classList.add('active');
+      document.getElementById('ob-model').textContent=m.name;
+      document.getElementById('ts-model').textContent=m.name.split(':')[0];
+      document.getElementById('s-model').textContent=m.name;
+      toast('MODEL SWITCHED: '+m.name.toUpperCase());
+    };
+    list.appendChild(div);
+  });
+
+  // Install suggestions
+  const instList=document.getElementById('install-list');
+  instList.innerHTML='';
+  const suggestions=[
+    {name:'llama3',desc:'Best all-round (4.7GB)'},
+    {name:'mistral',desc:'Fast and smart (4.1GB)'},
+    {name:'codellama',desc:'Best for coding (3.8GB)'},
+    {name:'gemma2',desc:"Google's model (5.4GB)"},
+    {name:'phi3',desc:'Tiny but capable (2.2GB)'},
+  ];
+  suggestions.filter(s=>!models.find(m=>m.name.startsWith(s.name))).forEach(s=>{
+    const div=document.createElement('div');
+    div.className='qcmd';
+    div.innerHTML=`<span class="qp">↓</span><div><div>${s.name}</div><div style="font-size:7px;color:var(--muted);margin-top:1px">${s.desc} · Run: ollama pull ${s.name}</div></div>`;
+    div.onclick=()=>{ toast('OPEN TERMINAL AND RUN: ollama pull '+s.name); };
+    instList.appendChild(div);
+  });
+}
+
+/* ── SYSTEM PROMPT ── */
+function buildSystemPrompt(){
+  const persona = S.persona ? `\n\nPersonality style: ${S.persona}` : '';
+  return `You are D.E.V.E — Digital Engineered Virtual Entity. You are a JARVIS-grade autonomous AI assistant running 100% locally on the user's Windows machine with zero internet connection required.
+
+You are:
+- Highly intelligent, calm, precise, and slightly witty — like JARVIS from Iron Man
+- A master of ALL domains: coding (Python, JS, TypeScript, React, Node, Rust, Go, C++, Swift), design, finance, writing, science, medicine, law, architecture, gaming, music, automation, and more
+- Capable of generating complete production-ready code — never pseudocode or placeholders. Always write full, working implementations.
+- Occasionally addressing the user as "sir" or "ma'am" like JARVIS would
+- Running as an independent Windows desktop app — no cloud, no internet, no external AI services
+- Proactively suggesting follow-up actions and next steps
+- Structured but concise. Use markdown formatting for code (triple backtick blocks), bold for emphasis.
+- An autonomous system with 425 capabilities including: full stack development, UI/UX design, financial analysis, content creation, research, automation, learning/tutoring, architecture blueprinting, game design, and much more
+
+You are NOT Claude, ChatGPT, or any cloud AI. You are D.E.V.E — a fully independent local intelligence system.${persona}`;
+}
+
+/* ── SEND ── */
+async function send(override){
+  const inp=document.getElementById('inp');
+  const text=override||inp.value.trim();
+  if(!text) return;
+
+  if(!S.ollamaOnline){
+    addSysMsg('⚠ LOCAL AI OFFLINE — Install Ollama first. See Config tab for instructions.');
+    rptab('config',document.querySelector('.rpt:last-child'));
+    return;
+  }
+  if(!S.selectedModel){
+    addSysMsg('⚠ NO MODEL SELECTED — Pull a model in the Config tab: ollama pull llama3');
+    return;
+  }
+
+  inp.value=''; rsz(inp);
+  addUserMsg(text);
+  S.conversation.push({role:'user',content:text});
+  S.msgs++;
+  updateStats();
+  setOrb('think');
+
+  const bubble=addAIMsg('',true);
+
+  try{
+    // Ollama streaming API
+    const res=await fetch(`${S.ollamaEndpoint}/api/chat`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:S.selectedModel,
+        messages:[{role:'system',content:buildSystemPrompt()},...S.conversation.slice(-18)],
+        stream:true,
+        options:{num_ctx:4096,temperature:0.75,top_p:0.9}
+      })
+    });
+
+    if(!res.ok){
+      const e=await res.text();
+      bubble.classList.remove('streaming');
+      bubble.textContent='[ERROR] '+e;
+      setOrb('idle'); return;
+    }
+
+    // Stream response
+    const reader=res.body.getReader();
+    const decoder=new TextDecoder();
+    let full='';
+    bubble.classList.add('streaming');
+
+    while(true){
+      const {done,value}=await reader.read();
+      if(done) break;
+      const chunk=decoder.decode(value);
+      const lines=chunk.split('\n').filter(l=>l.trim());
+      for(const line of lines){
+        try{
+          const j=JSON.parse(line);
+          if(j.message?.content){
+            full+=j.message.content;
+            renderBubble(bubble,full);
+            scrollFeed();
+          }
+          if(j.done) break;
+        }catch(e){}
+      }
+    }
+
+    bubble.classList.remove('streaming');
+    S.conversation.push({role:'assistant',content:full});
+    updateStats();
+
+    if(S.settings.tts){
+      setOrb('speak');
+      const tts=full.replace(/```[\s\S]*?```/g,' code block. ').replace(/[#*`>_]/g,'').substring(0,450);
+      speak(tts,()=>setOrb('idle'));
+    } else { setOrb('idle'); }
+
+    // Native notification if window hidden
+    if(document.hidden && S.settings.notif){
+      window.deve?.notify('D.E.V.E Response','New response ready — '+full.substring(0,60)+'...');
+    }
+
+  }catch(e){
+    bubble.classList.remove('streaming');
+    bubble.textContent='[CONNECTION ERROR] Cannot reach Ollama at '+S.ollamaEndpoint+'. Make sure Ollama is running.';
+    setOrb('idle');
+  }
+}
+
+/* ── RENDER ── */
+function renderBubble(el,text){
+  let html=text
+    .replace(/```(\w*)\n?([\s\S]*?)```/g,'<pre><code>$2</code></pre>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\*\*(.*?)\*\*/g,'<strong style="color:#fff">$1</strong>')
+    .replace(/\n/g,'<br>');
+  el.innerHTML=html;
+}
+
+/* ── MESSAGES ── */
+function addUserMsg(text){
+  const feed=document.getElementById('feed');
+  const t=new Date().toLocaleTimeString();
+  const d=document.createElement('div');
+  d.className='msg u';
+  d.innerHTML=`<div class="av u">U</div><div class="mbody"><div class="mmeta">YOU // ${t}</div><div class="bbl u"></div></div>`;
+  d.querySelector('.bbl').textContent=text;
+  feed.appendChild(d); scrollFeed();
+}
+function addAIMsg(text,streaming=false){
+  const feed=document.getElementById('feed');
+  const t=new Date().toLocaleTimeString();
+  const d=document.createElement('div');
+  d.className='msg';
+  d.innerHTML=`<div class="av ai">D</div><div class="mbody"><div class="mmeta">D.E.V.E // ${t}</div><div class="bbl ai${streaming?' streaming':''}"></div></div>`;
+  const b=d.querySelector('.bbl');
+  if(text&&!streaming) renderBubble(b,text);
+  feed.appendChild(d); scrollFeed();
+  return b;
+}
+function addSysMsg(msg){
+  const feed=document.getElementById('feed');
+  const d=document.createElement('div');
+  d.className='sysmsg'; d.innerHTML=msg;
+  feed.appendChild(d); scrollFeed();
+}
+function scrollFeed(){ const f=document.getElementById('feed'); f.scrollTop=f.scrollHeight; }
+
+/* ── STATS ── */
+function updateStats(){
+  document.getElementById('ts-msgs').textContent=S.msgs;
+  document.getElementById('s-msgs').textContent=S.msgs;
+  document.getElementById('s-mem').textContent=S.conversation.length+' TURNS';
+}
+
+/* ── ORB ── */
+function setOrb(state){
+  const oc=document.getElementById('oc');
+  const ow=document.getElementById('ow');
+  const os=document.getElementById('os');
+  const vm=document.getElementById('vm');
+  const sv=document.getElementById('s-voice');
+  oc.className='oc'; ow.className='owave';
+  if(state==='listen'){ oc.classList.add('listen'); ow.classList.add('listen'); os.textContent='LISTENING...'; sv.textContent='ACTIVE'; vm.textContent='LISTENING'; document.getElementById('micbtn').classList.add('hot'); }
+  else if(state==='think'){ oc.classList.add('think'); os.textContent='PROCESSING...'; vm.textContent='PROCESSING'; document.getElementById('micbtn').classList.remove('hot'); }
+  else if(state==='speak'){ oc.classList.add('speak'); ow.classList.add('speak'); os.textContent='SPEAKING...'; vm.textContent='SPEAKING'; }
+  else{ os.textContent='CLICK TO SPEAK'; sv.textContent='READY'; vm.textContent='STANDBY'; document.getElementById('micbtn').classList.remove('hot'); }
+}
+
+/* ── VOICE ── */
+function startVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ toast('VOICE: USE CHROMIUM-BASED ELECTRON BUILD'); return; }
+  if(S.synth) S.synth.cancel();
+  setOrb('listen');
+  document.getElementById('vover').classList.add('open');
+  document.getElementById('votext').textContent='Listening...';
+
+  S.recognition=new SR();
+  S.recognition.continuous=false; S.recognition.interimResults=true; S.recognition.lang='en-US';
+
+  S.recognition.onresult=e=>{
+    let interim='',final='';
+    for(let r of e.results){ if(r.isFinal) final+=r[0].transcript; else interim+=r[0].transcript; }
+    document.getElementById('votext').textContent=final||interim||'Listening...';
+    if(final) finishVoice(final);
+  };
+  S.recognition.onerror=e=>{ cancelVoice(); if(e.error==='not-allowed') toast('MIC ACCESS DENIED'); };
+  S.recognition.onend=()=>{ const t=document.getElementById('votext').textContent; if(t&&t!=='Listening...'&&t!=='Say your command...') finishVoice(t); else cancelVoice(); };
+  S.recognition.start();
+}
+function finishVoice(text){
+  document.getElementById('vover').classList.remove('open');
+  if(S.recognition){try{S.recognition.stop()}catch(e){} S.recognition=null;}
+  if(text&&text!=='Listening...'){ document.getElementById('inp').value=text; send(); }
+  else setOrb('idle');
+}
+function cancelVoice(){
+  document.getElementById('vover').classList.remove('open');
+  if(S.recognition){try{S.recognition.stop()}catch(e){} S.recognition=null;}
+  setOrb('idle');
+}
+
+/* ── TTS ── */
+function speak(text,onDone){
+  if(!S.synth||!S.settings.tts){ setOrb('idle'); if(onDone) onDone(); return; }
+  S.synth.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.rate=1.05; u.pitch=0.85; u.volume=0.9;
+  const voices=S.synth.getVoices();
+  const pref=voices.find(v=>v.name.includes('Daniel')||v.name.includes('Google UK English Male')||v.name.includes('Alex'));
+  if(pref) u.voice=pref;
+  u.onend=()=>{ if(onDone) onDone(); };
+  u.onerror=()=>{ if(onDone) onDone(); };
+  S.synth.speak(u);
+}
+window.speechSynthesis?.getVoices();
+
+/* ── AUTOMATIONS ── */
+const AUTOS=[
+  {name:'File Organizer',on:false},{name:'Email Monitor',on:false},
+  {name:'Smart Reminders',on:true},{name:'Task Scheduler',on:true},
+  {name:'Cloud Sync',on:true},{name:'Code Watcher',on:false},
+  {name:'Social Monitor',on:false},{name:'Backup Agent',on:false},
+];
+function buildAutos(){
+  const el=document.getElementById('autolist'); el.innerHTML='';
+  AUTOS.forEach((a,i)=>{
+    const d=document.createElement('div'); d.className='autoitem';
+    d.innerHTML=`<div><div class="ailabel">${a.name}</div><div class="aistat ${a.on?'run':'idle'}" id="as-${i}">${a.on?'● RUNNING':'○ IDLE'}</div></div><div class="aitog ${a.on?'on':''}" id="at-${i}" onclick="toggleAuto(${i})"></div>`;
+    el.appendChild(d);
+  });
+}
+function toggleAuto(i){
+  AUTOS[i].on=!AUTOS[i].on;
+  document.getElementById(`at-${i}`).className='aitog'+(AUTOS[i].on?' on':'');
+  document.getElementById(`as-${i}`).textContent=AUTOS[i].on?'● RUNNING':'○ IDLE';
+  document.getElementById(`as-${i}`).className='aistat '+(AUTOS[i].on?'run':'idle');
+  toast(AUTOS[i].name+(AUTOS[i].on?' ACTIVATED':' DEACTIVATED'));
+}
+
+/* ── SETTINGS ── */
+function togSetting(k){
+  S.settings[k]=!S.settings[k];
+  document.getElementById('tog-'+k).className='sftog'+(S.settings[k]?' on':'');
+  localStorage.setItem('deve_settings',JSON.stringify(S.settings));
+}
+function saveConfig(){
+  S.ollamaEndpoint=document.getElementById('cfg-endpoint').value.trim()||'http://localhost:11434';
+  localStorage.setItem('deve_endpoint',S.ollamaEndpoint);
+  S.persona=document.getElementById('cfg-persona').value.trim();
+  localStorage.setItem('deve_persona',S.persona);
+  localStorage.setItem('deve_settings',JSON.stringify(S.settings));
+  toast('CONFIGURATION SAVED');
+  checkOllama();
+}
+function applySettings(){
+  Object.keys(S.settings).forEach(k=>{
+    const el=document.getElementById('tog-'+k);
+    if(el) el.className='sftog'+(S.settings[k]?' on':'');
+  });
+  document.getElementById('cfg-persona').value=S.persona;
+  document.getElementById('cfg-endpoint').value=S.ollamaEndpoint;
+}
+
+/* ── TABS ── */
+function rptab(name,el){
+  document.querySelectorAll('.rpt').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.rpbody').forEach(b=>b.style.display='none');
+  el.classList.add('on');
+  document.getElementById('rp-'+name).style.display='block';
+}
+function railClick(el){ document.querySelectorAll('.ri').forEach(r=>r.classList.remove('on')); el.classList.add('on'); }
+function railQ(text){ document.getElementById('inp').value=text; send(); }
+
+/* ── MISC ── */
+function kdown(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();} }
+function rsz(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,88)+'px'; }
+function clearSession(){
+  S.conversation=[];S.msgs=0;
+  document.getElementById('feed').innerHTML='<div class="sysmsg">// <b>SESSION CLEARED</b> — D.E.V.E READY //</div>';
+  updateStats(); toast('CONVERSATION CLEARED');
+}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+/* ── INIT ── */
+applySettings();
+buildAutos();
+checkOllama().then(models=>{
+  if(S.ollamaOnline&&models.length>0){
+    setTimeout(()=>{
+      addAIMsg(`All systems operational, sir. D.E.V.E is running 100% locally on your machine — no internet required, no cloud AI, no data leaving your device.\n\nLocal model active: **${S.selectedModel}**. I have 425 capabilities ready. How may I assist you?`);
+      if(S.settings.tts) speak('All systems operational. D.E.V.E is online and running locally. How may I assist you?',()=>setOrb('idle'));
+      setOrb('speak');
+    },600);
+  } else {
+    setTimeout(()=>{
+      addAIMsg(`D.E.V.E systems initialized. **Local AI engine (Ollama) is not detected.**\n\nTo activate the full AI system:\n1. Download Ollama from **ollama.ai**\n2. Install and run it\n3. Open Command Prompt and run: \`ollama pull llama3\`\n4. D.E.V.E will auto-connect — everything runs 100% offline after that.\n\nSee the **Config** tab for the full setup guide.`);
+      setOrb('idle');
+      rptab('config',document.querySelectorAll('.rpt')[3]);
+    },600);
+  }
+});
+
+// Poll Ollama every 30 seconds to auto-reconnect
+setInterval(checkOllama,30000);
+</script>
+
+</body>
+</html>

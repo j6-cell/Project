@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>D.E.V.E - Local AI Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--arc:#00c8ff;--grn:#00ffaa;--gld:#ffd84d;--red:#ff4060;--vio:#9b6dff;--bg:#020b14;--p1:#060f1a;--p2:#040c18;--b1:rgba(0,200,255,.09);--b2:rgba(0,200,255,.22);--tx:#c8eeff;--mu:rgba(150,210,240,.38);}
+html,body{height:100%;overflow:hidden;background:#000;color:var(--tx);font-family:'Rajdhani',sans-serif}
+body{display:flex;align-items:center;justify-content:center}
+.app{position:relative;width:min(1100px,98vw);height:min(680px,96vh);background:var(--bg);border:1px solid var(--b1);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.scanlines{position:absolute;inset:0;pointer-events:none;z-index:2;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.055) 2px,rgba(0,0,0,.055) 4px)}
+canvas#bgc{position:absolute;inset:0;z-index:0;pointer-events:none}
+.tb{height:36px;background:#010810;border-bottom:1px solid var(--b1);display:flex;align-items:center;padding:0 12px;gap:8px;z-index:10}
+.tb-logo{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:900;letter-spacing:.18em;color:#fff}
+.tb-logo em{color:var(--arc);font-style:normal}
+.tb-stats{display:flex;gap:14px;flex:1;padding-left:10px}
+.tb-s{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--mu);letter-spacing:.05em}
+.tb-s b{color:var(--arc)}
+.pdot{width:6px;height:6px;border-radius:50%;background:var(--grn);box-shadow:0 0 6px var(--grn);animation:pd 2s ease-in-out infinite;flex-shrink:0}
+@keyframes pd{0%,100%{opacity:1}50%{opacity:.2}}
+.wbtns{display:flex;margin-left:auto}
+.wb{width:38px;height:36px;border:none;background:transparent;color:rgba(150,210,240,.3);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.wb:hover{background:rgba(0,200,255,.07);color:var(--arc)}
+.wb.cls:hover{background:rgba(255,64,96,.15);color:var(--red)}
+.main{flex:1;display:grid;grid-template-columns:46px 210px 1fr 220px;overflow:hidden;position:relative;z-index:1}
+.rail{background:rgba(3,9,17,.9);border-right:1px solid var(--b1);display:flex;flex-direction:column;align-items:center;padding:6px 0;gap:2px}
+.ri{width:38px;height:38px;border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;color:var(--mu);border:1px solid transparent;transition:all .15s;font-family:'Share Tech Mono',monospace}
+.ri:hover,.ri.on{background:rgba(0,200,255,.07);border-color:var(--b1);color:var(--arc)}
+.ri svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.ri span{font-size:5.5px;letter-spacing:.04em}
+.rsep{width:24px;height:1px;background:var(--b1);margin:2px 0}
+.lp{background:rgba(4,11,20,.8);border-right:1px solid var(--b1);display:flex;flex-direction:column;overflow:hidden}
+.lsec{border-bottom:1px solid var(--b1);padding:9px 11px;flex-shrink:0}
+.lsec.grow{flex:1;overflow-y:auto}
+.lsec.grow::-webkit-scrollbar{width:2px}
+.lsec.grow::-webkit-scrollbar-thumb{background:rgba(0,200,255,.12)}
+.slbl{font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(150,210,240,.3);letter-spacing:.12em;margin-bottom:6px;display:flex;align-items:center;gap:4px}
+.slbl::before{content:'//';color:var(--arc);opacity:.35}
+.orbwrap{display:flex;flex-direction:column;align-items:center;gap:7px;padding:6px 0 10px}
+.orb{width:62px;height:62px;border-radius:50%;position:relative;cursor:pointer}
+.or{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(0,200,255,.14);animation:osp 4s linear infinite}
+.or:nth-child(2){inset:-6px;border-color:rgba(0,200,255,.06);animation-duration:7s;animation-direction:reverse}
+.or:nth-child(3){inset:-14px;border-color:rgba(0,200,255,.03);animation-duration:12s}
+@keyframes osp{to{transform:rotate(360deg)}}
+.oc{position:absolute;inset:7px;border-radius:50%;background:rgba(0,40,80,.97);border:1px solid rgba(0,200,255,.28);display:flex;align-items:center;justify-content:center;transition:all .3s;cursor:pointer}
+.oc.listen{background:rgba(0,55,28,.97);border-color:rgba(0,255,170,.45)}
+.oc.think{background:rgba(28,0,65,.97);border-color:rgba(155,109,255,.45);animation:tp .55s ease-in-out infinite}
+.oc.speak{background:rgba(65,38,0,.97);border-color:rgba(255,216,77,.45)}
+@keyframes tp{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.ol{font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:900;color:#fff;text-shadow:0 0 10px var(--arc)}
+.ostat{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--mu);text-align:center;letter-spacing:.1em}
+.owave{display:flex;align-items:center;justify-content:center;gap:2px;height:18px}
+.ow{width:2px;border-radius:99px;background:var(--arc);animation:owv 1.4s ease-in-out infinite}
+@keyframes owv{0%,100%{height:2px;opacity:.14}50%{height:14px;opacity:.75}}
+.owave.idle .ow{animation:none;height:2px;opacity:.1}
+.owave.speak .ow{background:var(--gld)}
+.owave.listen .ow{background:var(--grn)}
+.drows{display:flex;flex-direction:column;gap:4px}
+.dr{display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:8.5px;border-bottom:1px solid rgba(0,200,255,.04);padding-bottom:4px}
+.dr:last-child{border:none}
+.dk{color:var(--mu)}.dv{color:var(--arc)}.dv.g{color:var(--grn)}.dv.y{color:var(--gld)}.dv.r{color:var(--red)}
+.progs{display:flex;flex-direction:column;gap:6px}
+.pgr{display:flex;flex-direction:column;gap:2px}
+.pgh{display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:8px}
+.pgk{color:var(--mu)}.pgv{color:var(--arc)}
+.pgt{height:2px;background:rgba(0,200,255,.06)}
+.pgf{height:100%;position:relative}
+.pgf::after{content:'';position:absolute;right:0;top:0;height:100%;width:3px;background:#fff;opacity:.4;filter:blur(1px)}
+.center{display:flex;flex-direction:column;overflow:hidden;background:rgba(2,7,14,.6)}
+.feed{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.feed::-webkit-scrollbar{width:2px}
+.feed::-webkit-scrollbar-thumb{background:rgba(0,200,255,.1);border-radius:9px}
+.sysmsg{font-family:'Share Tech Mono',monospace;font-size:8.5px;color:rgba(150,210,240,.28);text-align:center;padding:5px;letter-spacing:.05em;border-top:1px solid rgba(0,200,255,.04);border-bottom:1px solid rgba(0,200,255,.04)}
+.sysmsg b{color:var(--arc)}
+.msg{display:flex;gap:7px;animation:mi .22s ease}
+@keyframes mi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.msg.u{flex-direction:row-reverse}
+.av{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:6.5px;font-weight:700;border:1px solid;margin-top:2px}
+.av.ai{background:rgba(0,200,255,.07);color:var(--arc);border-color:rgba(0,200,255,.22)}
+.av.u{background:rgba(155,109,255,.07);color:var(--vio);border-color:rgba(155,109,255,.22)}
+.mbody{max-width:85%;display:flex;flex-direction:column;gap:2px}
+.msg.u .mbody{align-items:flex-end}
+.mmeta{font-family:'Share Tech Mono',monospace;font-size:7.5px;color:rgba(150,210,240,.28)}
+.bbl{padding:8px 11px;border-radius:2px;font-size:12.5px;line-height:1.65;font-family:'Rajdhani',sans-serif;word-break:break-word;white-space:pre-wrap}
+.bbl.ai{background:rgba(0,200,255,.04);border:1px solid var(--b1);border-left:2px solid var(--arc);color:var(--tx)}
+.bbl.u{background:rgba(155,109,255,.05);border:1px solid rgba(155,109,255,.14);border-right:2px solid var(--vio);color:var(--tx);text-align:right}
+.bbl.streaming::after{content:'?';animation:cur .65s step-end infinite;color:var(--arc)}
+@keyframes cur{0%,100%{opacity:1}50%{opacity:0}}
+.bbl pre{background:rgba(0,0,0,.45);border:1px solid rgba(0,200,255,.1);border-radius:2px;padding:9px;margin:6px 0;font-family:'Share Tech Mono',monospace;font-size:10.5px;overflow-x:auto;white-space:pre;color:#00ffaa}
+.bbl code{font-family:'Share Tech Mono',monospace;font-size:10.5px;color:#00ffaa;background:rgba(0,255,170,.05);padding:1px 4px;border-radius:2px}
+.ibar{border-top:1px solid var(--b1);padding:8px 12px;display:flex;gap:6px;align-items:flex-end;background:rgba(2,8,16,.97);flex-shrink:0}
+.inp{flex:1;background:rgba(0,200,255,.03);border:1px solid var(--b1);border-radius:2px;padding:7px 11px;color:var(--tx);font-family:'Share Tech Mono',monospace;font-size:11px;outline:none;resize:none;min-height:32px;max-height:80px;transition:border-color .2s;line-height:1.4}
+.inp::placeholder{color:rgba(150,210,240,.22)}
+.inp:focus{border-color:var(--b2)}
+.ibtn{height:32px;padding:0 11px;background:transparent;border:1px solid var(--b1);border-radius:2px;color:var(--mu);font-family:'Share Tech Mono',monospace;font-size:8.5px;cursor:pointer;letter-spacing:.06em;transition:all .16s;white-space:nowrap;display:flex;align-items:center;gap:4px;flex-shrink:0}
+.ibtn:hover{border-color:var(--arc);color:var(--arc)}
+.ibtn.primary{border-color:var(--b2);color:var(--arc)}
+.ibtn.primary:hover{background:rgba(0,200,255,.08)}
+.ibtn.mic.hot{border-color:var(--grn);color:var(--grn);background:rgba(0,255,170,.05);animation:mh 1s ease-in-out infinite}
+@keyframes mh{0%,100%{box-shadow:0 0 0 0 rgba(0,255,170,.3)}50%{box-shadow:0 0 0 4px rgba(0,255,170,0)}}
+.ibtn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.5}
+.rp{background:rgba(4,11,20,.8);border-left:1px solid var(--b1);display:flex;flex-direction:column;overflow:hidden}
+.rptabs{display:flex;border-bottom:1px solid var(--b1);flex-shrink:0}
+.rpt{flex:1;padding:8px 0;text-align:center;font-family:'Share Tech Mono',monospace;font-size:7px;letter-spacing:.07em;color:var(--mu);border-bottom:1px solid transparent;cursor:pointer;transition:all .15s}
+.rpt:hover{color:var(--tx)}
+.rpt.on{color:var(--arc);border-bottom-color:var(--arc)}
+.rpbody{flex:1;overflow-y:auto;padding:10px 11px}
+.rpbody::-webkit-scrollbar{width:2px}
+.rpbody::-webkit-scrollbar-thumb{background:rgba(0,200,255,.1);border-radius:9px}
+.mc{border:1px solid var(--b1);border-radius:2px;padding:8px 9px;margin-bottom:5px;cursor:pointer;transition:all .15s;background:rgba(0,200,255,.015)}
+.mc:hover{border-color:var(--b2);background:rgba(0,200,255,.04)}
+.mc.on{border-color:var(--b2);background:rgba(0,200,255,.07)}
+.mc-n{font-family:'Share Tech Mono',monospace;font-size:9.5px;color:var(--tx);margin-bottom:2px}
+.mc-d{font-family:'Share Tech Mono',monospace;font-size:7.5px;color:var(--mu)}
+.tag{display:inline-block;font-family:'Share Tech Mono',monospace;font-size:6.5px;border:1px solid var(--b1);border-radius:1px;padding:1px 4px;color:var(--mu);margin-top:3px;margin-right:2px}
+.tag.g{border-color:rgba(0,255,170,.2);color:rgba(0,255,170,.6)}
+.qlist{display:flex;flex-direction:column;gap:4px}
+.qcmd{border:1px solid var(--b1);border-radius:2px;padding:6px 8px;font-family:'Share Tech Mono',monospace;font-size:8.5px;color:var(--mu);cursor:pointer;transition:all .15s;display:flex;align-items:flex-start;gap:5px;line-height:1.4}
+.qcmd:hover{border-color:var(--arc);color:var(--arc);background:rgba(0,200,255,.03)}
+.qp{color:var(--arc);opacity:.5;flex-shrink:0;margin-top:1px}
+.autoitem{border:1px solid var(--b1);border-radius:2px;padding:7px 9px;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.ailbl{font-family:'Share Tech Mono',monospace;font-size:8.5px;color:var(--tx)}
+.aistat{font-family:'Share Tech Mono',monospace;font-size:7.5px;margin-top:2px}
+.aistat.run{color:var(--grn)}.aistat.idle{color:var(--mu)}
+.aitog{width:28px;height:13px;border-radius:99px;border:1px solid var(--b1);cursor:pointer;position:relative;background:transparent;flex-shrink:0;transition:all .2s}
+.aitog.on{background:rgba(0,255,170,.1);border-color:rgba(0,255,170,.32)}
+.aitog::after{content:'';position:absolute;top:1px;left:1px;width:9px;height:9px;border-radius:50%;background:var(--mu);transition:all .2s}
+.aitog.on::after{left:16px;background:var(--grn)}
+.notif{border:1px solid var(--b1);border-radius:2px;padding:7px 8px;margin-bottom:4px;display:flex;gap:7px;cursor:pointer;transition:all .15s}
+.notif:hover{background:rgba(0,200,255,.03)}
+.notif.unread{border-color:rgba(0,200,255,.2)}
+.ndot{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.ntxt{font-family:'Share Tech Mono',monospace;font-size:8.5px;color:var(--tx);line-height:1.45}
+.ntime{font-family:'Share Tech Mono',monospace;font-size:7px;color:var(--mu);margin-top:2px}
+.cg{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--mu);letter-spacing:.08em;margin-bottom:5px;margin-top:8px}
+.cg-inp{width:100%;background:rgba(0,200,255,.03);border:1px solid var(--b1);border-radius:2px;padding:6px 9px;color:var(--tx);font-family:'Share Tech Mono',monospace;font-size:9.5px;outline:none;margin-bottom:8px;transition:border-color .15s}
+.cg-inp:focus{border-color:var(--b2)}
+.cg-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.cg-lbl{font-family:'Share Tech Mono',monospace;font-size:8.5px;color:var(--tx)}
+.sftog{width:30px;height:14px;border-radius:99px;border:1px solid var(--b1);cursor:pointer;position:relative;background:transparent;flex-shrink:0;transition:all .2s}
+.sftog.on{background:rgba(0,200,255,.1);border-color:rgba(0,200,255,.2)}
+.sftog::after{content:'';position:absolute;top:1px;left:1px;width:10px;height:10px;border-radius:50%;background:var(--mu);transition:all .2s}
+.sftog.on::after{left:17px;background:var(--arc)}
+.cg-btn{width:100%;padding:7px;background:rgba(0,200,255,.05);border:1px solid var(--b2);border-radius:2px;color:var(--arc);font-family:'Share Tech Mono',monospace;font-size:8.5px;cursor:pointer;letter-spacing:.08em;transition:all .15s;margin-bottom:5px}
+.cg-btn:hover{background:rgba(0,200,255,.1)}
+.cg-btn.warn{background:rgba(255,64,96,.04);border-color:rgba(255,64,96,.25);color:var(--red)}
+.cg-btn.warn:hover{background:rgba(255,64,96,.09)}
+.cg-note{font-family:'Share Tech Mono',monospace;font-size:7.5px;color:var(--mu);line-height:1.55;margin-top:4px}
+.sb{height:20px;border-top:1px solid var(--b1);background:rgba(1,8,16,.99);display:flex;align-items:center;padding:0 12px;gap:16px;font-family:'Share Tech Mono',monospace;font-size:7.5px;color:rgba(150,210,240,.28);flex-shrink:0;z-index:10}
+.sb b{color:var(--arc)}
+.toast{position:absolute;bottom:30px;left:50%;transform:translateX(-50%) translateY(12px);background:rgba(6,15,26,.98);border:1px solid var(--b2);border-radius:2px;padding:6px 16px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--arc);z-index:999;opacity:0;transition:all .28s;pointer-events:none;white-space:nowrap;letter-spacing:.06em}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.vbanner{position:absolute;top:44px;left:50%;transform:translateX(-50%);background:rgba(0,55,28,.97);border:1px solid rgba(0,255,170,.3);border-radius:3px;padding:8px 18px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--grn);z-index:300;display:none;align-items:center;gap:12px;letter-spacing:.06em}
+.vbanner.show{display:flex}
+.vbanner-wave{display:flex;align-items:center;gap:2px;height:14px}
+.vw{width:2px;border-radius:99px;background:var(--grn);animation:owv 1.2s ease-in-out infinite}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:1000}
+.modal-backdrop.show{display:flex}
+.modal-panel{width:min(520px,92vw);background:rgba(2,8,16,.98);border:1px solid rgba(0,200,255,.14);border-radius:10px;box-shadow:0 0 32px rgba(0,0,0,.55);padding:18px;display:flex;flex-direction:column;gap:12px}
+.modal-header{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.modal-header h3{font-family:'Orbitron',sans-serif;font-size:14px;color:#fff;letter-spacing:.09em}
+.modal-close{background:transparent;border:1px solid rgba(255,255,255,.12);border-radius:4px;color:var(--mu);font-family:'Share Tech Mono',monospace;font-size:10px;padding:4px 8px;cursor:pointer}
+.modal-row{display:flex;flex-direction:column;gap:6px}
+.field-label{font-family:'Share Tech Mono',monospace;font-size:8.5px;color:var(--mu);letter-spacing:.08em}
+.field-input,.field-select{width:100%;background:rgba(0,200,255,.03);border:1px solid var(--b1);border-radius:4px;padding:8px 10px;color:var(--tx);font-family:'Share Tech Mono',monospace;font-size:9.5px;outline:none;transition:border-color .2s}
+.field-input:focus,.field-select:focus{border-color:var(--b2)}
+.field-toggle{display:flex;align-items:center;gap:10px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.modal-actions .cg-btn{width:auto;padding:8px 14px}
+@media(max-width:900px){.main{grid-template-columns:1fr}.rail,.lp,.rp{display:none}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <canvas id="bgc"></canvas>
+  <div class="scanlines"></div>
+
+  <div class="vbanner" id="vbanner">
+    <div class="vbanner-wave">
+      <div class="vw" style="animation-delay:.00s"></div><div class="vw" style="animation-delay:.10s"></div>
+      <div class="vw" style="animation-delay:.20s"></div><div class="vw" style="animation-delay:.05s"></div>
+      <div class="vw" style="animation-delay:.15s"></div><div class="vw" style="animation-delay:.25s"></div>
+    </div>
+    <span id="vtxt">Listening... say your command</span>
+    <button onclick="cancelVoice()" style="background:transparent;border:1px solid rgba(255,64,96,.3);border-radius:2px;padding:3px 10px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--red);cursor:pointer">CANCEL</button>
+  </div>
+
+  <div class="tb">
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="6" stroke="#00c8ff" stroke-opacity=".3"/><text x="6.5" y="9.8" font-size="7.5" text-anchor="middle" fill="#00c8ff" font-family="monospace" font-weight="900">D</text></svg>
+    <div class="tb-logo">D.E.V.<em>E</em></div>
+    <div class="tb-stats">
+      <div class="tb-s">STATUS <b id="t-status">ONLINE</b></div>
+      <div class="tb-s">MSGS <b id="t-msgs">0</b></div>
+      <div class="tb-s">BG <b id="t-bg">0</b></div>
+      <div class="tb-s">UPTIME <b id="t-uptime">00:00:00</b></div>
+      <div class="tb-s">VOICE <b id="t-voice">READY</b></div>
+    </div>
+    <div class="pdot" style="margin-left:auto;margin-right:8px"></div>
+    <div class="wbtns">
+      <button class="wb" onclick="window.deve?.minimize()" title="Minimize">-</button>
+      <button class="wb" onclick="window.deve?.maximize()" title="Maximize">□</button>
+      <button class="wb cls" onclick="window.deve?.hide()" title="Hide to tray">↘</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="rail">
+      <div class="ri on" onclick="railClick(this)" title="Chat"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>CHAT</span></div>
+      <div class="ri" onclick="railClick(this);quickSend('Write me complete production-ready code. What should I build?')" title="Code"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg><span>CODE</span></div>
+      <div class="ri" onclick="railClick(this);quickSend('Help me design something — branding, UI concepts, or visual strategy.')" title="Design"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span>DESIGN</span></div>
+      <div class="ri" onclick="railClick(this);quickSend('Give me a comprehensive financial analysis and investment strategy.')" title="Finance"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span>FIN</span></div>
+      <div class="ri" onclick="railClick(this);quickSend('Help me write something — email, essay, script, report, or content.')" title="Write"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span>WRITE</span></div>
+      <div class="ri" onclick="railClick(this);quickSend('Research this topic thoroughly and give me a structured briefing.')" title="Search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span>SEARCH</span></div>
+      <div class="ri" onclick="railClick(this);quickSend('Create a strategic plan, roadmap, or execution framework for my goal.')" title="Plan"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>PLAN</span></div>
+      <div class="rsep"></div>
+      <div class="ri" onclick="railClick(this);quickSend('Teach me something — explain a concept deeply with examples and exercises.')" title="Learn"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>LEARN</span></div>
+      <div class="ri" onclick="railClick(this);quickSend('Help me automate a workflow or repetitive task.')" title="Automate"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span>AUTO</span></div>
+    </div>
+
+    <div class="lp">
+      <div class="lsec">
+        <div class="slbl">CORE AI</div>
+        <div class="orbwrap">
+          <div class="orb" onclick="startVoice()" title="Click to speak">
+            <div class="or"></div><div class="or"></div><div class="or"></div>
+            <div class="oc" id="oc"><div class="ol">D</div></div>
+          </div>
+          <div class="ostat" id="ostat">CLICK TO SPEAK</div>
+          <div class="owave idle" id="owave">
+            <div class="ow" style="animation-delay:.00s"></div><div class="ow" style="animation-delay:.10s"></div>
+            <div class="ow" style="animation-delay:.20s"></div><div class="ow" style="animation-delay:.05s"></div>
+            <div class="ow" style="animation-delay:.15s"></div><div class="ow" style="animation-delay:.25s"></div>
+            <div class="ow" style="animation-delay:.08s"></div>
+          </div>
+        </div>
+      </div>
+      <div class="lsec">
+        <div class="slbl">SYSTEM</div>
+        <div class="drows">
+          <div class="dr"><span class="dk">LOCAL AI</span><span class="dv g" id="s-ai">CHECKING...</span></div>
+          <div class="dr"><span class="dk">MODEL</span><span class="dv y" id="s-model">llama3</span></div>
+          <div class="dr"><span class="dk">BACKGROUND</span><span class="dv g" id="s-bg">RUNNING</span></div>
+          <div class="dr"><span class="dk">VOICE</span><span class="dv" id="s-voice">READY</span></div>
+          <div class="dr"><span class="dk">MEMORY</span><span class="dv" id="s-mem">0 TURNS</span></div>
+          <div class="dr"><span class="dk">STATUS</span><span class="dv" id="s-status">DEMO</span></div>
+        </div>
+      </div>
+      <div class="lsec grow">
+        <div class="slbl">MODULES</div>
+        <div class="progs">
+          <div class="pgr"><div class="pgh"><span class="pgk">UP DEV</span><span class="pgv">READY</span></div><div class="pgt"><div class="pgf" style="width:78%;background:linear-gradient(90deg,#00ffaa,#0af)"></div></div></div>
+          <div class="pgr"><div class="pgh"><span class="pgk">UP STUDIO</span><span class="pgv">READY</span></div><div class="pgt"><div class="pgf" style="width:70%;background:linear-gradient(90deg,#0af,#9b6dff)"></div></div></div>
+          <div class="pgr"><div class="pgh"><span class="pgk">UP FLOW</span><span class="pgv">ACTIVE</span></div><div class="pgt"><div class="pgf" style="width:100%;background:linear-gradient(90deg,#ffd84d,#ff8c42)"></div></div></div>
+          <div class="pgr"><div class="pgh"><span class="pgk">UP FINANCE</span><span class="pgv">READY</span></div><div class="pgt"><div class="pgf" style="width:62%;background:linear-gradient(90deg,#00ffaa,#4f8fff)"></div></div></div>
+          <div class="pgr"><div class="pgh"><span class="pgk">UP VOICE</span><span class="pgv" id="vm">STANDBY</span></div><div class="pgt"><div class="pgf" style="width:25%;background:linear-gradient(90deg,#ff6b6b,#ffd84d)"></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="center">
+      <div class="feed" id="feed">
+        <div class="sysmsg">// <b>D.E.V.E AUTONOMOUS SYSTEM ONLINE</b> - LOCAL AI MODE ENABLED - NO CLOUD KEYS //</div>
+      </div>
+      <div class="ibar">
+        <button class="ibtn mic" id="micbtn" onclick="startVoice()" title="Voice input">
+          <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          MIC
+        </button>
+        <textarea class="inp" id="inp" rows="1" placeholder="Ask D.E.V.E anything... (Enter to send)" onkeydown="kdown(event)" oninput="rsz(this)"></textarea>
+          <button class="ibtn primary" onclick="send()">SEND</button>
+        <button class="ibtn" onclick="clearChat()" title="Clear conversation">
+          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="rp">
+      <div class="rptabs">
+        <div class="rpt on" onclick="rptab('models',this)">MODELS</div>
+        <div class="rpt" onclick="rptab('cmds',this)">CMDS</div>
+        <div class="rpt" onclick="rptab('auto',this)">AUTO</div>
+        <div class="rpt" onclick="rptab('notif',this)">ALERTS</div>
+        <div class="rpt" onclick="rptab('cfg',this)">CFG</div>
+      </div>
+      <div class="rpbody" id="rp-models">
+        <div class="slbl" style="margin-bottom:7px">LOCAL AI MODELS</div>
+        <div style="display:flex;align-items:center;gap:7px;background:rgba(0,200,255,.04);border:1px solid var(--b1);border-radius:2px;padding:7px 9px;margin-bottom:8px">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--grn)"></div>
+          <div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--tx)">Ollama connected — local models available</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:7.5px;color:var(--mu)">100% local — zero internet required</div>
+          </div>
+        </div>
+        <div class="mc on" onclick="selModel(this,'llama3')"><div class="mc-n">llama3</div><div class="mc-d">4.7 GB — Best all-round</div><span class="tag g">LOCAL</span><span class="tag">ACTIVE</span></div>
+        <div class="mc" onclick="selModel(this,'mistral')"><div class="mc-n">mistral</div><div class="mc-d">4.1 GB — Fast & smart</div><span class="tag g">LOCAL</span><span class="tag">STANDBY</span></div>
+        <div class="mc" onclick="selModel(this,'codellama')"><div class="mc-n">codellama</div><div class="mc-d">3.8 GB — Best for coding</div><span class="tag g">LOCAL</span><span class="tag">STANDBY</span></div>
+        <div class="mc" onclick="selModel(this,'phi3')"><div class="mc-n">phi3</div><div class="mc-d">2.2 GB — Tiny & capable</div><span class="tag g">LOCAL</span><span class="tag">STANDBY</span></div>
+      </div>
+      <div class="rpbody" id="rp-cmds" style="display:none">
+        <div class="slbl" style="margin-bottom:7px">QUICK COMMANDS</div>
+        <div class="qlist">
+          <div class="qcmd" onclick="quickSend('Write a complete production-ready Python FastAPI REST API with JWT authentication, refresh tokens, and PostgreSQL integration.')"><span class="qp">?</span>Build full REST API</div>
+          <div class="qcmd" onclick="quickSend('Create a complete React component with TypeScript, hooks, and Tailwind CSS styling.')"><span class="qp">?</span>React component</div>
+          <div class="qcmd" onclick="quickSend('Write a compelling short story with vivid characters, rich dialogue, and an unexpected twist.')"><span class="qp">?</span>Story writing</div>
+          <div class="qcmd" onclick="quickSend('Create a 30-day viral social media content calendar with hooks, captions, hashtags, and posting schedule.')"><span class="qp">?</span>30-day content plan</div>
+          <div class="qcmd" onclick="quickSend('Analyze a business idea and give me a complete startup plan with market analysis, MVP features, and monetization.')"><span class="qp">?</span>Startup plan</div>
+          <div class="qcmd" onclick="quickSend('Create a comprehensive personal finance plan with budget, savings, and investment strategy.')"><span class="qp">?</span>Finance plan</div>
+          <div class="qcmd" onclick="quickSend('Design a complete brand identity with logo concept, palette, typography, and brand voice.')"><span class="qp">?</span>Brand identity</div>
+          <div class="qcmd" onclick="quickSend('Create a 12-week progressive workout plan with exercise descriptions and nutrition guidance.')"><span class="qp">?</span>Fitness plan</div>
+          <div class="qcmd" onclick="quickSend('Explain quantum computing from first principles with clear analogies and applications.')"><span class="qp">?</span>Explain quantum computing</div>
+          <div class="qcmd" onclick="quickSend('Generate a full game design document for a mobile RPG with mechanics, progression, and monetization.')"><span class="qp">?</span>Game design doc</div>
+        </div>
+      </div>
+      <div class="rpbody" id="rp-auto" style="display:none">
+        <div class="slbl" style="margin-bottom:7px">BACKGROUND AUTOMATIONS</div>
+        <div id="autolist"></div>
+        <div class="slbl" style="margin-top:10px;margin-bottom:6px">QUICK SETUP</div>
+        <div class="qlist">
+          <div class="qcmd" onclick="quickSend('Set up a daily file organizer automation that sorts files by type and date.')"><span class="qp">?</span>Auto file organizer</div>
+          <div class="qcmd" onclick="quickSend('Create a morning briefing automation that summarizes tasks and meetings.')"><span class="qp">?</span>Morning briefing</div>
+          <div class="qcmd" onclick="quickSend('Build an auto-backup workflow that runs periodically and tracks changes.')"><span class="qp">?</span>Auto backup</div>
+        </div>
+      </div>
+      <div class="rpbody" id="rp-notif" style="display:none">
+        <div class="slbl" style="margin-bottom:7px">SYSTEM ALERTS</div>
+        <div id="notiflist"><div style="font-family:'Share Tech Mono',monospace;font-size:8.5px;color:var(--mu);text-align:center;padding:16px 0" data-e>No alerts yet</div></div>
+      </div>
+      <div class="rpbody" id="rp-cfg" style="display:none">
+        <div class="slbl" style="margin-bottom:6px">CONFIGURATION</div>
+        <div class="cg">LOCAL AI ENDPOINT</div>
+        <input class="cg-inp" type="text" id="cfg-endpoint" placeholder="http://localhost:11434"/>
+        <div class="cg">AI PERSONALITY</div>
+        <input class="cg-inp" type="text" id="cfg-persona" placeholder="Formal like JARVIS / Casual / Ultra-concise"/>
+        <div class="cg" style="margin-top:6px">SETTINGS</div>
+        <div class="cg-row"><span class="cg-lbl">Text-to-speech</span><div class="sftog on" id="tog-tts" onclick="togCfg('tts')"></div></div>
+        <div class="cg-row"><span class="cg-lbl">Background tasks</span><div class="sftog on" id="tog-bg" onclick="togCfg('bg')"></div></div>
+        <div class="cg-row"><span class="cg-lbl">Wake word</span><div class="sftog" id="tog-wake" onclick="togCfg('wake')"></div></div>
+        <div class="cg-row"><span class="cg-lbl">Desktop notifications</span><div class="sftog" id="tog-notif" onclick="togCfg('notif')"></div></div>
+        <button class="cg-btn" onclick="saveCfg()">SAVE CONFIGURATION ?</button>
+        <button class="cg-btn" onclick="clearChat()">CLEAR CONVERSATION</button>
+        <button class="cg-btn warn" onclick="window.deve?.quit()">QUIT D.E.V.E</button>
+        <div class="cg-note">Local settings only. No API key required.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sb">
+    <div class="pdot"></div>
+    <span>OLLAMA <b id="sb-ai">CHECKING</b></span>
+    <span>MODEL <b id="sb-model">llama3</b></span>
+    <span>UPTIME <b id="sb-uptime">00:00:00</b></span>
+    <span>BG TASKS <b id="sb-bg">0</b></span>
+    <span style="flex:1"></span>
+    <span style="color:rgba(0,200,255,.14)">D.E.V.E v1.0 - LOCAL AI ONLY - NO CLOUD KEY</span>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <div class="modal-backdrop" id="automationModal" onclick="if(event.target===this)closeAutomationForm()">
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="autoFormTitle">
+      <div class="modal-header">
+        <h3 id="autoFormTitle">Add Automation</h3>
+        <button class="modal-close" onclick="closeAutomationForm()" type="button">CLOSE</button>
+      </div>
+      <div class="modal-row"><label class="field-label" for="autoName">Automation Name</label><input id="autoName" class="field-input" type="text" placeholder="Daily Reminder"/></div>
+      <div class="modal-row"><label class="field-label" for="autoTime">Trigger Time</label><input id="autoTime" class="field-input" type="time"/></div>
+      <div class="modal-row"><label class="field-label" for="autoType">Action Type</label><select id="autoType" class="field-select"><option value="notify">Notify</option><option value="run_command">Run Command</option><option value="open_url">Open URL</option><option value="open_path">Open Path</option></select></div>
+      <div class="modal-row"><label class="field-label" for="autoValue">Action Value</label><input id="autoValue" class="field-input" type="text" placeholder="Notification text, command, URL, or path"/></div>
+      <div class="modal-row field-toggle"><label class="field-label" for="autoEnabled">Enabled</label><input id="autoEnabled" type="checkbox" checked/></div>
+      <div class="modal-actions"><button class="cg-btn" id="autoSaveBtn" onclick="saveAutomationForm()">Create Automation</button><button class="cg-btn warn" onclick="closeAutomationForm()" type="button">Cancel</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const S={
+  endpoint:localStorage.getItem('deve_endpoint')||'http://localhost:11434',
+  selectedModel:localStorage.getItem('deve_model')||'llama3',
+  conversation:[],msgs:0,bgTasks:0,ollamaOnline:false,
+  startTime:Date.now(),recognition:null,synth:window.speechSynthesis,
+  settings:JSON.parse(localStorage.getItem('deve_settings')||'{"tts":true,"bg":true,"wake":false,"notif":false}'),
+  persona:localStorage.getItem('deve_persona')||''
+};
+const MODELS=['llama3','mistral','codellama','phi3'];
+// Automations are persisted in localStorage under 'deve_autos'
+let AUTOS = [];
+function loadAutos(){
+  try{
+    const parsed = JSON.parse(localStorage.getItem('deve_autos')||'null');
+    if(Array.isArray(parsed)) return parsed;
+  }catch(e){}
+  return [
+    {name:'Smart Reminders',on:true,time:'09:00',action:{type:'notify',value:'Morning briefing ready'},lastRun:null},
+    {name:'Task Scheduler',on:true,time:'08:00',action:{type:'notify',value:'Daily tasks scheduled'},lastRun:null},
+    {name:'Backup Agent',on:true,time:'03:00',action:{type:'notify',value:'Backup completed'},lastRun:null}
+  ];
+}
+function saveAutos(){
+  try{localStorage.setItem('deve_autos',JSON.stringify(AUTOS));}catch(e){}
+}
+AUTOS = loadAutos();
+const bgMessages=['Monitoring workflows...','Syncing AI context...','Running scheduler...','Passive intelligence scan...','Compressing memory...','Indexing knowledge...'];
+let bgIndex=0;
+
+function init(){
+  applySettings();
+  buildAutos();
+  setEndpointSettings();
+  const inp=document.getElementById('inp');
+  if(inp){rsz(inp);inp.focus();}
+  checkOllama();
+  setTimeout(()=>{
+    addAIMsg(`All systems operational, sir. D.E.V.E is running locally with no API key required. Local model active: **${S.selectedModel}**. How may I assist you?`,false);
+    setOrb('idle');
+  },600);
+}
+
+function applySettings(){
+  document.getElementById('tog-tts').className='sftog'+(S.settings.tts?' on':'');
+  document.getElementById('tog-bg').className='sftog'+(S.settings.bg?' on':'');
+  document.getElementById('tog-wake').className='sftog'+(S.settings.wake?' on':'');
+  document.getElementById('tog-notif').className='sftog'+(S.settings.notif?' on':'');
+}
+
+function setEndpointSettings(){
+  document.getElementById('cfg-endpoint').value=S.endpoint;
+  document.getElementById('cfg-persona').value=S.persona;
+  document.getElementById('sb-model').textContent=S.selectedModel;
+  document.getElementById('s-model').textContent=S.selectedModel;
+}
+
+function checkOllama(){
+  fetch(`${S.endpoint}/api/tags`,{signal:AbortSignal.timeout(3000)})
+    .then(r=>r.ok?r.json():Promise.reject())
+    .then(()=>{
+      S.ollamaOnline=true;
+      document.getElementById('s-ai').textContent='ONLINE';
+      document.getElementById('s-ai').className='dv g';
+      document.getElementById('sb-ai').textContent='ONLINE';
+    })
+    .catch(()=>{
+      S.ollamaOnline=false;
+      document.getElementById('s-ai').textContent='OFFLINE';
+      document.getElementById('s-ai').className='dv r';
+      document.getElementById('sb-ai').textContent='OFFLINE';
+    });
+}
+
+function selModel(el,name){
+  document.querySelectorAll('.mc').forEach(m=>m.classList.remove('on'));
+  el.classList.add('on');
+  S.selectedModel=name;
+  localStorage.setItem('deve_model',name);
+  document.getElementById('sb-model').textContent=name;
+  document.getElementById('s-model').textContent=name;
+  toast('MODEL SWITCHED: '+name.toUpperCase());
+}
+
+function rptab(name,el){
+  document.querySelectorAll('.rpt').forEach(t=>{t.classList.remove('on');t.style.color='';});
+  document.querySelectorAll('.rpbody').forEach(b=>b.style.display='none');
+  el.classList.add('on');
+  document.getElementById('rp-'+name).style.display='block';
+}
+
+function railClick(el){document.querySelectorAll('.ri').forEach(r=>r.classList.remove('on'));el.classList.add('on');}
+
+function addUserMsg(text){
+  const feed=document.getElementById('feed');
+  const t=new Date().toLocaleTimeString();
+  const d=document.createElement('div');d.className='msg u';
+  d.innerHTML=`<div class="av u">U</div><div class="mbody"><div class="mmeta">YOU // ${t}</div><div class="bbl u"></div></div>`;
+  d.querySelector('.bbl').textContent=text;
+  feed.appendChild(d);scrollFeed();
+}
+
+function addAIMsg(text){
+  const feed=document.getElementById('feed');
+  const t=new Date().toLocaleTimeString();
+  const d=document.createElement('div');d.className='msg';
+  d.innerHTML=`<div class="av ai">D</div><div class="mbody"><div class="mmeta">D.E.V.E // ${t}</div><div class="bbl ai"></div></div>`;
+  const bubble=d.querySelector('.bbl');
+  renderBubble(bubble,text);
+  feed.appendChild(d);scrollFeed();
+  return bubble;
+}
+
+function renderBubble(el,text){
+  const html=text.replace(/```([\s\S]*?)```/g,'<pre>$1</pre>').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*(.*?)\*\*/g,'<strong style="color:#fff">$1</strong>').replace(/\n/g,'<br>');
+  el.innerHTML=html;
+}
+
+function kdown(e){
+  if(e.key==='Enter' && !e.shiftKey){
+    e.preventDefault();
+    send();
+  }
+}
+
+function rsz(el){
+  el.style.height='auto';
+  el.style.height=el.scrollHeight+'px';
+}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  if(t._timer) clearTimeout(t._timer);
+  t._timer=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+function scrollFeed(){const f=document.getElementById('feed');f.scrollTop=f.scrollHeight;}
+
+function send(override){
+  const inp=document.getElementById('inp');
+  const text=override||inp.value.trim();
+  if(!text) return;
+  inp.value='';rsz(inp);
+  addUserMsg(text);
+  S.conversation.push({role:'user',content:text});
+  S.msgs++;document.getElementById('t-msgs').textContent=S.msgs;
+  document.getElementById('s-mem').textContent=S.conversation.length+' TURNS';
+  setOrb('think');
+  const bubble=addAIMsg('...');
+  bubble.classList.add('streaming');
+  if(!S.ollamaOnline){
+    bubble.textContent='Local Ollama is offline. Start Ollama and pull a model, then retry.';
+    setOrb('idle');
+    return;
+  }
+  const messages=[{role:'system',content:buildSystemPrompt()},...S.conversation.slice(-18)];
+  fetch(`${S.endpoint}/api/chat`,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:S.selectedModel,messages,stream:false,options:{num_ctx:4096,temperature:0.7}})
+  }).then(async r=>{
+    if(!r.ok){const err=await r.text();bubble.classList.remove('streaming');bubble.textContent='[ERROR] '+err;setOrb('idle');return;}
+    const data=await r.json();
+    const reply=data?.completion?.content?.[0]?.text||data?.message?.content||data?.output||'No response.';
+    bubble.classList.remove('streaming');renderBubble(bubble,reply);
+    S.conversation.push({role:'assistant',content:reply});scrollFeed();
+    addNotif('Response ready','g');
+    if(S.settings.tts){setOrb('speak');const tts=reply.replace(/```[\s\S]*?```/g,' code block. ').replace(/[#*`>_]/g,'').substring(0,450);speak(tts,()=>setOrb('idle'));}
+    else setOrb('idle');
+  }).catch(e=>{bubble.classList.remove('streaming');bubble.textContent='[CONNECTION ERROR] '+e.message;setOrb('idle');});
+}
+
+function quickSend(text){document.getElementById('inp').value=text;send();}
+
+function speak(text,onDone){if(!S.synth||!S.settings.tts){if(onDone)onDone();return;}S.synth.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=1.05;u.pitch=0.85;u.volume=0.9;const voices=S.synth.getVoices();const pref=voices.find(v=>v.name.includes('Daniel')||v.name.includes('Alex')||v.name.includes('Google UK English Male'));if(pref)u.voice=pref;u.onend=()=>{if(onDone)onDone()};u.onerror=()=>{if(onDone)onDone()};S.synth.speak(u)}
+
+function startVoice(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast('VOICE: USE CHROME/EDGE/ELECTRON');return;}if(S.synth)S.synth.cancel();setOrb('listen');document.getElementById('vbanner').classList.add('show');document.getElementById('vtxt').textContent='Listening... say your command';S.recognition=new SR();S.recognition.continuous=false;S.recognition.interimResults=true;S.recognition.lang='en-US';S.recognition.onresult=e=>{let interim='',final='';for(const r of e.results){if(r.isFinal)final+=r[0].transcript;else interim+=r[0].transcript;}document.getElementById('vtxt').textContent=final||interim||'Listening...';document.getElementById('inp').value=final||interim;if(final)finishVoice(final);};S.recognition.onerror=e=>{cancelVoice();toast('VOICE ERROR: '+(e.error||'UNKNOWN'));};S.recognition.onend=()=>{const t=document.getElementById('inp').value.trim();if(t&&t!=='Listening...')finishVoice(t);else cancelVoice();};try{S.recognition.start()}catch(e){cancelVoice()}}
+
+function finishVoice(text){document.getElementById('vbanner').classList.remove('show');if(S.recognition){try{S.recognition.stop()}catch{}S.recognition=null;}if(text){document.getElementById('inp').value=text;send();}else setOrb('idle');}
+function cancelVoice(){document.getElementById('vbanner').classList.remove('show');document.getElementById('micbtn').classList.remove('hot');if(S.recognition){try{S.recognition.stop()}catch{}S.recognition=null;}setOrb('idle');}
+
+function addNotif(msg,type){const list=document.getElementById('notiflist');const empty=list.querySelector('[data-e]');if(empty)empty.remove();const t=new Date().toLocaleTimeString();const d=document.createElement('div');d.className='notif unread';d.innerHTML=`<div class="ndot" style="background:${type==='g'?'#00ffaa':type==='r'?'#ff4060':'#ffd84d'}"></div><div><div class="ntxt">${msg}</div><div class="ntime">${t}</div></div>`;d.onclick=()=>d.classList.remove('unread');list.insertBefore(d,list.firstChild);const alertTab=document.querySelector('.rpt:nth-child(4)');if(alertTab&&!alertTab.classList.contains('on'))alertTab.style.color=type==='r'?'#ff4060':'#ffd84d';}
+function addNotif(msg,type){
+  const list=document.getElementById('notiflist');
+  const empty=list.querySelector('[data-e]');
+  if(empty) empty.remove();
+  const t=new Date().toLocaleTimeString();
+  const d=document.createElement('div');
+  d.className='notif unread';
+  d.innerHTML=`<div class="ndot" style="background:${type==='g'?'#00ffaa':type==='r'?'#ff4060':'#ffd84d'}"></div><div><div class="ntxt">${msg}</div><div class="ntime">${t}</div></div>`;
+  d.onclick=()=>d.classList.remove('unread');
+  list.insertBefore(d,list.firstChild);
+  const alertTab=document.querySelector('.rpt:nth-child(4)');
+  if(alertTab && !alertTab.classList.contains('on')) alertTab.style.color=type==='r'?'#ff4060':'#ffd84d';
+  if(S.settings.notif){
+    try{ window.deve?.notify('D.E.V.E', msg); }catch(e){}
+  }
+}
+
+function buildAutos(){
+  const el=document.getElementById('autolist');
+  el.innerHTML='';
+  AUTOS.forEach((a,i)=>{
+    const d=document.createElement('div');
+    d.className='autoitem';
+    d.innerHTML=`<div style="display:flex;flex-direction:column;gap:4px"><div class="ailbl">${a.name} <span style="font-family:'Share Tech Mono',monospace;font-size:7px;color:var(--mu);margin-left:8px">${a.time||''}</span></div><div class="ailbl" style="font-size:7.5px;color:var(--mu);">${a.action?.type||'notify'} → ${String(a.action?.value||'').substring(0,40)}</div></div><div style="display:flex;gap:6px;align-items:center"><button class="cg-btn" onclick="openAutomationForm(${i})">EDIT</button><button class="cg-btn" onclick="runAutomationNow(${i})">RUN</button><div class="aitog ${a.on?'on':''}" id="at${i}" onclick="togAuto(${i})"></div></div>`;
+    el.appendChild(d);
+  });
+  const addWrap=document.createElement('div');
+  addWrap.style.marginTop='8px';
+  addWrap.innerHTML='<button class="cg-btn" onclick="openAutomationForm(-1)">+ Add Automation</button>';
+  el.appendChild(addWrap);
+}
+
+function togAuto(i){
+  AUTOS[i].on = !AUTOS[i].on;
+  const tog = document.getElementById('at'+i);
+  const status = document.getElementById('as'+i);
+  if(tog) tog.className='aitog'+(AUTOS[i].on?' on':'');
+  if(status){ status.textContent = AUTOS[i].on?'● RUNNING':'○ IDLE'; status.className = 'aistat '+(AUTOS[i].on?'run':'idle'); }
+  saveAutos();
+  toast(AUTOS[i].name + (AUTOS[i].on ? ' ACTIVATED' : ' DEACTIVATED'));
+}
+
+function openAutomationForm(index){
+  const modal=document.getElementById('automationModal');
+  const title=document.getElementById('autoFormTitle');
+  const nameField=document.getElementById('autoName');
+  const timeField=document.getElementById('autoTime');
+  const typeField=document.getElementById('autoType');
+  const valueField=document.getElementById('autoValue');
+  const enabledField=document.getElementById('autoEnabled');
+  const saveBtn=document.getElementById('autoSaveBtn');
+  let auto={name:'',time:'09:00',action:{type:'notify',value:''},on:true,lastRun:null};
+  if(index>=0 && AUTOS[index]){auto=JSON.parse(JSON.stringify(AUTOS[index])); title.textContent='Edit Automation';}
+  else {title.textContent='Add Automation';}
+  modal.dataset.editIndex=index;
+  nameField.value=auto.name||'';
+  timeField.value=auto.time||'09:00';
+  typeField.value=auto.action?.type||'notify';
+  valueField.value=auto.action?.value||'';
+  enabledField.checked=Boolean(auto.on);
+  saveBtn.textContent=index>=0?'Update Automation':'Create Automation';
+  modal.classList.add('show');
+}
+
+function closeAutomationForm(){
+  document.getElementById('automationModal').classList.remove('show');
+}
+
+function validateAutomationData(data){
+  if(!data.name||!data.name.trim()) return 'Name is required.';
+  if(!/^\d{1,2}:\d{2}$/.test(data.time)) return 'Time must be HH:MM.';
+  if(!data.action?.type) return 'Action type is required.';
+  if(!data.action.value||!data.action.value.trim()) return 'Action value is required.';
+  if(data.action.type==='open_url' && !/^https?:\/\//.test(data.action.value)) return 'URL must start with http:// or https://';
+  return null;
+}
+
+function saveAutomationForm(){
+  const modal=document.getElementById('automationModal');
+  const index=parseInt(modal.dataset.editIndex,10);
+  const nameField=document.getElementById('autoName');
+  const timeField=document.getElementById('autoTime');
+  const typeField=document.getElementById('autoType');
+  const valueField=document.getElementById('autoValue');
+  const enabledField=document.getElementById('autoEnabled');
+  const auto={name:nameField.value.trim(),time:timeField.value.trim(),on:enabledField.checked,action:{type:typeField.value,value:valueField.value.trim()},lastRun:index>=0?AUTOS[index].lastRun:null};
+  const error=validateAutomationData(auto);
+  if(error){toast(error);return;}
+  if(index>=0 && AUTOS[index]){
+    AUTOS[index]=auto;
+    toast('Automation updated');
+  } else {
+    AUTOS.push(auto);
+    toast('Automation created');
+  }
+  saveAutos();
+  buildAutos();
+  closeAutomationForm();
+}
+
+function runAutomationNow(i){
+  runAutomation(i);
+}
+
+function clearChat(){S.conversation=[];S.msgs=0;document.getElementById('feed').innerHTML='<div class="sysmsg">// <b>SESSION CLEARED</b> — D.E.V.E READY //</div>';document.getElementById('t-msgs').textContent='0';document.getElementById('s-mem').textContent='0 TURNS';toast('CONVERSATION CLEARED');}
+function togCfg(k){S.settings[k]=!S.settings[k];document.getElementById('tog-'+k).className='sftog'+(S.settings[k]?' on':'');localStorage.setItem('deve_settings',JSON.stringify(S.settings));}
+function saveCfg(){S.endpoint=document.getElementById('cfg-endpoint').value.trim()||'http://localhost:11434';localStorage.setItem('deve_endpoint',S.endpoint);S.persona=document.getElementById('cfg-persona').value.trim();localStorage.setItem('deve_persona',S.persona);toast('CONFIGURATION SAVED');checkOllama();}
+
+function setOrb(state){const oc=document.getElementById('oc');const ow=document.getElementById('owave');const os=document.getElementById('ostat');oc.className='oc';ow.className='owave';document.getElementById('t-voice').textContent=state.toUpperCase();document.getElementById('s-voice').textContent=state==='idle'?'READY':state.toUpperCase();document.getElementById('vm').textContent=state==='idle'?'STANDBY':state.toUpperCase();if(state==='listen'){oc.classList.add('listen');ow.classList.add('listen');os.textContent='LISTENING...';document.getElementById('micbtn').classList.add('hot');}else if(state==='think'){oc.classList.add('think');os.textContent='PROCESSING...';document.getElementById('micbtn').classList.remove('hot');}else if(state==='speak'){oc.classList.add('speak');ow.classList.add('speak');os.textContent='SPEAKING...';}else{os.textContent='CLICK TO SPEAK';document.getElementById('micbtn').classList.remove('hot');}}
+
+function buildSystemPrompt(){const persona=S.persona?`\n\nPersonality style: ${S.persona}`:'';return `You are D.E.V.E - Digital Engineered Virtual Entity. You are a JARVIS-grade autonomous AI assistant running 100% locally. You are calm, intelligent, precise, and slightly witty. You are a master of all domains including code, design, finance, writing, research, automation, and more.${persona}`;}
+
+// Run a specific automation by index
+async function runAutomation(i){
+  const a = AUTOS[i]; if(!a) return;
+  const act = a.action || {};
+  const today = new Date().toISOString().slice(0,10);
+  // mark lastRun immediately to avoid double-triggering
+  a.lastRun = today; saveAutos();
+  addNotif(`Automation: ${a.name} triggered`,'g');
+  try{
+    if(act.type==='notify'){
+      window.deve?.notify('D.E.V.E', act.value||a.name);
+    } else if(act.type==='run_command'){
+      const res = await window.deve?.runCommand(act.value||'');
+      if(res){
+        if(res.success) addNotif(`${a.name}: command succeeded`,'g');
+        else addNotif(`${a.name}: command failed: ${res.error||res.stderr}`,'r');
+      }
+    } else if(act.type==='open_url'){
+      window.deve?.openUrl(act.value||'');
+    } else if(act.type==='open_path'){
+      const r = await window.deve?.openPath(act.value||'');
+      if(r && r.success===false) addNotif(`${a.name}: open failed`,'r');
+    } else {
+      // generic runAuto event to main
+      window.deve?.runAuto({name:a.name,action:act});
+    }
+  }catch(e){addNotif(`${a.name}: error ${e.message}`,'r')}
+}
+
+// Scheduler: check automations every 30 seconds
+setInterval(()=>{
+  if(!S.settings.bg) return;
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const cur = `${hh}:${mm}`;
+  const today = now.toISOString().slice(0,10);
+  AUTOS.forEach((a,i)=>{
+    if(!a.on || !a.time) return;
+    if(a.time===cur && a.lastRun !== today){
+      runAutomation(i);
+    }
+  });
+},30000);
+
+setInterval(()=>{const s=Math.floor((Date.now()-S.startTime)/1000);const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;const str=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;document.getElementById('t-uptime').textContent=str;document.getElementById('sb-uptime').textContent=str;},1000);
+setInterval(()=>{if(!S.settings.bg)return;S.bgTasks++;bgIndex++;document.getElementById('t-bg').textContent=S.bgTasks;document.getElementById('sb-bg').textContent=S.bgTasks;if(S.bgTasks%5===0)addNotif(bgMessages[bgIndex%bgMessages.length],'y');},15000);
+const cv=document.getElementById('bgc');const cx=cv.getContext('2d');let pts=[];function initCv(){cv.width=window.innerWidth;cv.height=window.innerHeight;pts=Array.from({length:50},()=>({x:Math.random()*cv.width,y:Math.random()*cv.height,vx:(Math.random()-.5)*.22,vy:(Math.random()-.5)*.22,r:Math.random()*.9+.3,a:Math.random()}));}
+function drawCv(){cx.clearRect(0,0,cv.width,cv.height);pts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0)p.x=cv.width;if(p.x>cv.width)p.x=0;if(p.y<0)p.y=cv.height;if(p.y>cv.height)p.y=0;cx.beginPath();cx.arc(p.x,p.y,p.r,0,Math.PI*2);cx.fillStyle=`rgba(0,200,255,${p.a*.18})`;cx.fill();});for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){const d=Math.hypot(pts[i].x-pts[j].x,pts[i].y-pts[j].y);if(d<90){cx.beginPath();cx.moveTo(pts[i].x,pts[i].y);cx.lineTo(pts[j].x,pts[j].y);cx.strokeStyle=`rgba(0,200,255,${(1-d/90)*.04})`;cx.lineWidth=.4;cx.stroke();}}requestAnimationFrame(drawCv);}window.addEventListener('resize',initCv);initCv();drawCv();
+
+window.deve?.onFocusInput=()=>{document.getElementById('inp').focus();};
+window.deve?.onBgUpdate=(data)=>{document.getElementById('sb-bg').textContent=data.count;document.getElementById('t-bg').textContent=data.count;};
+
+init();
+</script>
+</body>
+</html>
